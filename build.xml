@@ -1,0 +1,66 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "no"?>
+<!-- WARNING: Eclipse auto-generated file.
+     Any modifications will be overwritten.
+     To include a user specific buildfile here, simply create one in the same
+     directory with the processing instruction <?eclipse.ant.import?>
+     as the first entry and export the buildfile again. -->
+
+<project basedir = "." default = "create-jar" name = "PoiManager">
+	
+    <!-- javac コンパイルオプション定義 -->
+    <property name = "debug.javac" value = "on"/>
+    <property name = "optimize.javac" value = "off"/>
+    <property name = "target.javac" value = "1.5"/>
+    <property name = "encoding.javac" value = "UTF-8"/>
+	<property name = "lib.dir"   location="./lib"/>
+	
+    <!-- ディレクトリ定義 -->
+    <property name = "bin.dir" value = "bin"/>
+    <property name = "dest.dir" value = "dest"/>
+    <property name = "pack.dir" value = "dest/jar-pack"/>
+    <property name = "src.dir" value = "src/main/java"/>
+    <property name = "res.dir" value = "src/main/resources"/>
+	<property name = "useage.dir" value = "useage"/>
+
+    <!-- コンパイル時のクラスパス -->
+    <path id="PoiManager.classpath">
+		<fileset dir="${lib.dir}" includes="*.jar"/>
+		<pathelement location = "bin"/>
+    </path>
+	
+    <target name = "clean">
+        <echo>clean</echo>
+        <delete dir = "${bin.dir}"/>
+    	<delete file = "${dest.dir}/PoiManager-poi*.jar"/>
+    </target>
+	
+    <!-- PoiManager.jar ファイルを作成 -->
+    <target depends = "clean" name = "create-jar" description = "-   (create PoiManager.jar)">
+        <echo>build PoiManager.</echo>
+
+        <mkdir dir = "${dest.dir}"/>
+        <mkdir dir = "${bin.dir}"/>
+
+        <javac srcdir = "${src.dir}" destdir = "${bin.dir}" debug = "${debug.javac}" target = "${target.javac}" encoding = "${encoding.javac}" deprecation = "off" >
+        	<compilerarg value="-Xlint:unchecked" />
+            <classpath refid = "PoiManager.classpath"/>
+            <include name = "**/*.java"/>
+        </javac>
+        <copy toDir = "${bin.dir}" preservelastmodified = "true">
+            <fileset dir = "${res.dir}" />
+        </copy>
+
+		<echo>create PoiManager.jar</echo>
+		
+    	<delete file = "${dest.dir}/PoiManager-poi*.jar"/>
+        <jar jarfile = "${dest.dir}/PoiManager-3.8.0.jar" duplicate = "preserve">
+            <fileset dir = "bin">
+            </fileset>
+        </jar>
+
+        <copy toDir = "${dest.dir}" preservelastmodified = "true">
+            <fileset dir = "${useage.dir}" />
+        </copy>
+
+    </target>
+</project>
