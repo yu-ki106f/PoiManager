@@ -34,6 +34,8 @@ public class PoiStyleDto extends AbstractDto {
 	public VAlign valign = null;
 	
 	public String dataFormat = null;
+	public Boolean wrapText = null;
+
 	/**
 	 * フィールドにしないようにprivate + getter, setter
 	 */
@@ -100,6 +102,7 @@ public class PoiStyleDto extends AbstractDto {
 		this.valign = StyleUtil.getVAlign(style.getVerticalAlignment());
 		
 		this.dataFormat = style.getDataFormatString();
+		this.wrapText = style.getWrapText();
 		
 		//本体
 		this.style = style;
@@ -166,6 +169,9 @@ public class PoiStyleDto extends AbstractDto {
 		}
 		if (dataFormat != null) {
 			style.setDataFormat(book.getCreationHelper().createDataFormat().getFormat(dataFormat));
+		}
+		if (this.wrapText != null) {
+			style.setWrapText(this.wrapText);
 		}
 	}
 	
