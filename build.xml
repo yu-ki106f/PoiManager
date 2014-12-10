@@ -52,8 +52,8 @@
 
 		<echo>create PoiManager.jar</echo>
 		
-    	<delete file = "${dest.dir}/PoiManager-poi*.jar"/>
-        <jar jarfile = "${dest.dir}/PoiManager-3.8.0.jar" duplicate = "preserve">
+    	<delete file = "${dest.dir}/PoiManager-3.10.0.jar"/>
+        <jar jarfile = "${dest.dir}/PoiManager-3.10.0.jar" duplicate = "preserve">
             <fileset dir = "bin">
             </fileset>
         </jar>
