@@ -2,7 +2,7 @@ package org.poco.framework.poi.creator.style.impl;
 
 import org.poco.framework.poi.constants.PoiConstants.Border;
 import org.poco.framework.poi.constants.PoiConstants.BorderPosition;
-import org.poco.framework.poi.constants.PoiConstants.Color;
+import org.poco.framework.poi.constants.PoiConstants.FLColor;
 import org.poco.framework.poi.creator.style.IStyleCreator;
 import org.poco.framework.poi.dto.PoiStyleDto;
 import org.poco.framework.poi.managers.IStyleManager;
@@ -27,7 +27,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 	
 	/**
 	 * IBorderTypeの実装
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public static class BorderTypeImpl<T> implements IBorderType<T>
@@ -71,7 +71,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 
 	/**
 	 * 中継インターフェース
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public interface IKindTyep<T> {
@@ -83,7 +83,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 	
 	/**
 	 * ボーダー種類の実装
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public static class BoaderKindImpl<T> implements IBorderKind<T>, IKindTyep<T>
@@ -128,7 +128,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 	
 	/**
 	 * IBorderColorの実装
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public static class BorderColorImpl<T> extends AbstractColorImpl<T> implements IBorderColor<T>
@@ -140,7 +140,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 		}
 
 	
-		protected void update(Color color) {
+		protected void update(FLColor color) {
 			
 			switch(type.getType()) {
 			case top:
@@ -173,7 +173,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 
 	/**
 	 * 
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public static class BorderStyleImpl<T> extends AbstractBorderImpl<T> implements IBorderStyle<T>

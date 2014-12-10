@@ -7,15 +7,18 @@ import org.poco.framework.poi.creator.comment.ICommentCreator;
 import org.poco.framework.poi.dto.PoiRect;
 import org.poco.framework.poi.managers.IPoiManager.IPoiCell;
 import org.poco.framework.poi.managers.IPoiManager.IPoiRange;
+import org.poco.framework.poi.utils.WorkbookUtil;
 
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
-import org.apache.poi.hssf.usermodel.HSSFComment;
-import org.apache.poi.hssf.usermodel.HSSFCreationHelper;
-import org.apache.poi.hssf.usermodel.HSSFPatriarch;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 
 /**
- * @author yu-ki106f
+ * @author funahashi
  *
  */
 public class CommentCreator<T> implements ICommentCreator<T> {
@@ -98,51 +101,62 @@ public class CommentCreator<T> implements ICommentCreator<T> {
 		return parent;
 	}
 	
-	private HSSFSheet getSheet() {
+	private Sheet getSheet() {
 		if (parent instanceof IPoiRange) {
 			return getSheet((IPoiRange)parent);
 		}
 		return getSheet((IPoiCell)parent);
 	}
 	
-	private HSSFSheet getSheet(IPoiRange value) {
+	private Sheet getSheet(IPoiRange value) {
 		return value.getOrgSheet();
 	}
 	
-	private HSSFSheet getSheet(IPoiCell value) {
+	private Sheet getSheet(IPoiCell value) {
 		return value.getOrgSheet();
 	}
 	
 	private void setComment(IPoiCell cell) {
-		HSSFPatriarch patriarch = null;
+		Drawing patriarch = null;
 		PoiRect pos = getPosition(cell);
+		
 		try {
-			HSSFCreationHelper createHelper = getSheet().getWorkbook().getCreationHelper();
-			patriarch = getSheet().getDrawingPatriarch();
-			if (patriarch == null) {
-				patriarch = getSheet().createDrawingPatriarch();
+			//コメントカラムを取得し、存在しない場合は追加する
+			Comment hComment = cell.getOrgCell().getCellComment();
+			CreationHelper createHelper = getSheet().getWorkbook().getCreationHelper();
+			if (hComment == null) {
+				//patriarch = getSheet().getDrawingPatriarch();
+				if (patriarch == null) {
+					patriarch = getSheet().createDrawingPatriarch();
+				}
+				ClientAnchor clientAnchor = null;
+				if (WorkbookUtil.isXlsx(getSheet().getWorkbook()) ) {
+					clientAnchor = new XSSFClientAnchor();
+				}
+				else {
+					clientAnchor = new HSSFClientAnchor();
+				}
+				clientAnchor.setDx1(this.padding.left);
+				clientAnchor.setDy1(this.padding.top);
+	
+				clientAnchor.setDx2(this.padding.right);
+				clientAnchor.setDy2(this.padding.bottom);
+				
+				clientAnchor.setCol1(pos.left);
+				clientAnchor.setRow1(pos.top);
+				clientAnchor.setCol2(pos.right);
+				clientAnchor.setRow2(pos.bottom);
+	
+				//コメントを生成する
+				hComment = patriarch.createCellComment(clientAnchor);
+				cell.getOrgCell().setCellComment(hComment);
 			}
-			HSSFClientAnchor clientAnchor = new HSSFClientAnchor();
-			clientAnchor.setDx1(this.padding.left);
-			clientAnchor.setDy1(this.padding.top);
-
-			clientAnchor.setDx2(this.padding.right);
-			clientAnchor.setDy2(this.padding.bottom);
-			
-			clientAnchor.setCol1(pos.left);
-			clientAnchor.setRow1(pos.top);
-			clientAnchor.setCol2(pos.right);
-			clientAnchor.setRow2(pos.bottom);
-			
-			//コメントを生成する
-			HSSFComment hComment = patriarch.createComment(clientAnchor);
 			//コメントを設定する
 			hComment.setString(createHelper.createRichTextString(comment));
 			//コメント作成者を設定する
 			if (createUser != null) {
 				hComment.setAuthor(createUser);
 			}
-			cell.getOrgCell().setCellComment(hComment);
 		}
 		catch(Exception e) {
 			//TODO ERROR

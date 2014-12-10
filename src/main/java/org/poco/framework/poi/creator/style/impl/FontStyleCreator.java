@@ -4,7 +4,7 @@
 package org.poco.framework.poi.creator.style.impl;
 
 import org.poco.framework.poi.constants.PoiConstants.BoldWeight;
-import org.poco.framework.poi.constants.PoiConstants.Color;
+import org.poco.framework.poi.constants.PoiConstants.FLColor;
 import org.poco.framework.poi.constants.PoiConstants.FontOffset;
 import org.poco.framework.poi.constants.PoiConstants.FontUnderline;
 import org.poco.framework.poi.dto.PoiStyleDto;
@@ -15,7 +15,7 @@ import org.poco.framework.poi.managers.IStyleManager.IFontType;
 import org.poco.framework.poi.managers.IStyleManager.IFontUnderline;
 
 /**
- * @author yu-ki106f
+ * @author funahashi
  *
  */
 public class FontStyleCreator<T> extends StyleCreatorImpl<T> {
@@ -143,7 +143,7 @@ public class FontStyleCreator<T> extends StyleCreatorImpl<T> {
 		}
 		
 	
-		protected void update(Color color) {
+		protected void update(FLColor color) {
 			creator.getStyleDto().getFont().color = color;
 		}
 

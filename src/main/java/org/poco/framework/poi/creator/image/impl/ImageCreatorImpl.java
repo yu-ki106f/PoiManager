@@ -11,8 +11,10 @@ import org.poco.framework.poi.managers.IPoiManager.IPoiRange;
 import org.poco.framework.poi.utils.WorkbookUtil;
 
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
-import org.apache.poi.hssf.usermodel.HSSFPatriarch;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 
 public class ImageCreatorImpl<T> implements IImageCreator<T> {
 
@@ -50,18 +52,18 @@ public class ImageCreatorImpl<T> implements IImageCreator<T> {
 		return getCellRange((IPoiCell)parent);
 	}
 	
-	private HSSFSheet getSheet() {
+	private Sheet getSheet() {
 		if (parent instanceof IPoiRange) {
 			return getSheet((IPoiRange)parent);
 		}
 		return getSheet((IPoiCell)parent);
 	}
 
-	private HSSFSheet getSheet(IPoiRange value) {
+	private Sheet getSheet(IPoiRange value) {
 		return value.getOrgSheet();
 	}
 	
-	private HSSFSheet getSheet(IPoiCell value) {
+	private Sheet getSheet(IPoiCell value) {
 		return value.getOrgSheet();
 	}
 	
@@ -83,14 +85,20 @@ public class ImageCreatorImpl<T> implements IImageCreator<T> {
 		PoiRect rect = getCellRange();
 		byte[] bytes = null;
 		
-		HSSFPatriarch patriarch = null;
+		Drawing patriarch = null;
 		try {
-			patriarch = getSheet().getDrawingPatriarch();
+			//patriarch = getSheet().getDrawingPatriarch();
 			if (patriarch == null) {
 				patriarch = getSheet().createDrawingPatriarch();
 			}
 			
-			HSSFClientAnchor clientAnchor = new HSSFClientAnchor();
+			ClientAnchor clientAnchor = null;
+			if (WorkbookUtil.isXlsx(getSheet().getWorkbook()) ) {
+				clientAnchor = new XSSFClientAnchor();
+			}
+			else {
+				clientAnchor = new HSSFClientAnchor();
+			}
 			clientAnchor.setDx1(imageDto.padding.left);
 			clientAnchor.setDy1(imageDto.padding.top);
 			//マイナス値にする

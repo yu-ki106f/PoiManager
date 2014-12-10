@@ -8,7 +8,7 @@ import org.apache.poi.ss.usermodel.Font;
 
 public class PoiConstants {
 	
-	public enum Color {
+	public enum FLColor {
 		BLACK
 			(HSSFColor.BLACK.class),
 		BROWN
@@ -113,7 +113,7 @@ public class PoiConstants {
 		 * コンストラクタ
 		 * @param value
 		 */
-		private Color(Class<? extends HSSFColor> value) {
+		private FLColor(Class<? extends HSSFColor> value) {
 			this.clazz = value;
 		}
 		

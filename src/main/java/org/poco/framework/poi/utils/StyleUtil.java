@@ -3,7 +3,7 @@ package org.poco.framework.poi.utils;
 import org.poco.framework.poi.constants.PoiConstants.Align;
 import org.poco.framework.poi.constants.PoiConstants.BoldWeight;
 import org.poco.framework.poi.constants.PoiConstants.Border;
-import org.poco.framework.poi.constants.PoiConstants.Color;
+import org.poco.framework.poi.constants.PoiConstants.FLColor;
 import org.poco.framework.poi.constants.PoiConstants.FillPattern;
 import org.poco.framework.poi.constants.PoiConstants.FontOffset;
 import org.poco.framework.poi.constants.PoiConstants.FontUnderline;
@@ -11,8 +11,8 @@ import org.poco.framework.poi.constants.PoiConstants.VAlign;
 
 public class StyleUtil {
 	
-	public static Color getColor(short index) {
-		for (Color item : Color.values() ) {
+	public static FLColor getColor(short index) {
+		for (FLColor item : FLColor.values() ) {
 			if (index == item.value()) {
 				return item;
 			}

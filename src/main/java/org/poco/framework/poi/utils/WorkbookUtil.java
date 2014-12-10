@@ -10,13 +10,13 @@ import java.util.Iterator;
 import org.poco.framework.poi.dto.PoiPosition;
 import org.poco.framework.poi.dto.PoiRect;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.util.IOUtils;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class WorkbookUtil {
 	private static final String TYPE_JPG = "jpg";
@@ -24,30 +24,33 @@ public class WorkbookUtil {
 	private static final String TYPE_PNG = "png";
 	private static final String TYPE_DIB = "bmp";
 	
+	private static final String XLSX = "xlsx";
+	
 	/**
 	 * Excelファイル(直接Path指定)を取得する
 	 * @param String ファイル名
 	 * @return HSSFWorkbook 作成したブック
 	 * @throws FljException 
 	 */
-	public static HSSFWorkbook readWorkbook(File f) throws Exception {
+	public static Workbook readWorkbook(File f) throws Exception {
 		
 		FileInputStream is = null; 
-		POIFSFileSystem psys = null;
-		HSSFWorkbook result = null;
+		//POIFSFileSystem psys = null;
+		Workbook result = null;
 		try {
 			
 			// テンプレートを取得
 			is = new FileInputStream(f);
 			
-			psys = new POIFSFileSystem(is);
-			
-			result = new HSSFWorkbook(psys);
-			
+			//psys = new POIFSFileSystem(is);
+			result = tryReadWorkbook(f.getName(),is);
+			if (result == null) {
+				throw new IOException(f.getName()+" is not open.");
+			}
 		} catch (FileNotFoundException e) {
 			throw e;
-		} catch (IOException e) {
-			throw e;
+//		} catch (IOException e) {
+//			throw e;
 		} finally {
 			try {
 				if(is != null) {
@@ -57,13 +60,52 @@ public class WorkbookUtil {
 		}
 		return result;
 	}
+	
+	public static Workbook createWorkBook(String name) {
+		if (isXlsx(name) ) {
+			return new XSSFWorkbook();
+		}
+		return new HSSFWorkbook();
+	}
+	public static Workbook tryReadWorkbook(String name,FileInputStream is) {
+		Workbook result = null;
+		if (isXlsx(name) ) {
+			result = readXlsx(is);
+			if (result == null) {
+				result = readXls(is);
+			}
+		}
+		else {
+			result = readXls(is);
+			if (result == null) {
+				result = readXlsx(is);
+			}
+		}
+		return result;
+	}
+		
+	private static Workbook readXls(FileInputStream is) {
+		try {
+			return new HSSFWorkbook(is);
+		}
+		catch(Exception e){}
+		return null;
+	}
+	
+	private static Workbook readXlsx(FileInputStream is) {
+		try {
+			return new XSSFWorkbook(is);
+		}
+		catch(Exception e){}
+		return null;
+	}
 
 	/**
 	 * ファイルにExcel情報を出力する
 	 * @param filePathName
 	 * @throws FljException
 	 */
-	public static void saveWorkBook(HSSFWorkbook wb, File f) throws Exception {
+	public static void saveWorkBook(Workbook wb, File f) throws Exception {
 		
 		if (f == null ) {
 			throw new Exception("保存先の設定が異常です。");
@@ -103,11 +145,11 @@ public class WorkbookUtil {
 	/**
 	 * ExcelのRowを取得する。
 	 * （行が無い場合新たに作成します）
-	 * @param HSSFSheet POIのExcelSheetオブジェクト
+	 * @param Sheet POIのExcelSheetオブジェクト
 	 * @param int 行番号
 	 */
-	public static HSSFRow getRow(HSSFSheet sheet, int i) {
-		HSSFRow row = sheet.getRow(i);
+	public static Row getRow(Sheet sheet, int i) {
+		Row row = sheet.getRow(i);
 		if (row == null) {
 			row = sheet.createRow(i);
 		}
@@ -117,21 +159,21 @@ public class WorkbookUtil {
 	/**
 	 * ExcelのCellを取得する。
 	 * （セルが無い場合新たに作成します）
-	 * @param HSSFRow POIのExcelRowオブジェクト
+	 * @param Row POIのExcelRowオブジェクト
 	 * @param int 列番号
 	 */
-	public static HSSFCell getCell(HSSFRow row, int i) {
-		HSSFCell cell = row.getCell(i);
+	public static Cell getCell(Row row, int i) {
+		Cell cell = row.getCell(i);
 		if (cell == null) {
 			cell = row.createCell(i);
 		}
 		return cell;
 	}
 	
-	public static boolean rename(HSSFSheet srcSheet, String name) {
+	public static boolean rename(Sheet srcSheet, String name) {
 		if (srcSheet == null) return false;
 		
-		HSSFWorkbook book = srcSheet.getWorkbook();
+		Workbook book = srcSheet.getWorkbook();
 		int index = book.getSheetIndex(srcSheet);
 		//対象シートが存在する 且つ 変更後の名前のシートがないこと
 		if (index != -1 && !exists(book, name)) {
@@ -293,7 +335,7 @@ public class WorkbookUtil {
 	 * @param sheet ワークシート
 	 * @return 最大座標のポイント
 	 */
-	public static PoiPosition getEndPoint(HSSFSheet sheet) {
+	public static PoiPosition getEndPoint(Sheet sheet) {
 		//行
 
 		Integer y = sheet.getLastRowNum();
@@ -340,7 +382,7 @@ public class WorkbookUtil {
 	 * @param name
 	 * @return
 	 */
-	public static boolean exists(HSSFWorkbook book, String name) {
+	public static boolean exists(Workbook book, String name) {
 		return (book.getSheetIndex(name) != -1);
 	}
 	
@@ -359,8 +401,8 @@ public class WorkbookUtil {
 		return value;
 	}
 	
-	public static void setSelectAndActive(HSSFSheet sheet) {
-		HSSFWorkbook book = sheet.getWorkbook();
+	public static void setSelectAndActive(Sheet sheet) {
+		Workbook book = sheet.getWorkbook();
 		//選択解除
 		for (int i = 0 ; i < book.getNumberOfSheets(); i++ ) {
 			book.getSheetAt(i).setSelected(false);
@@ -401,4 +443,12 @@ public class WorkbookUtil {
 		}
 		return -1;
 	}
+	public static boolean isXlsx(String fileName) {
+		return (getSuffix(fileName).toLowerCase().equals(XLSX) );
+	}	
+	public static boolean isXlsx(Workbook book) {
+		return (book instanceof XSSFWorkbook);
+	}
+
+
 }

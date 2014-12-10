@@ -1,6 +1,6 @@
 package org.poco.framework.poi.creator.style.impl;
 
-import org.poco.framework.poi.constants.PoiConstants.Color;
+import org.poco.framework.poi.constants.PoiConstants.FLColor;
 import org.poco.framework.poi.constants.PoiConstants.FillPattern;
 import org.poco.framework.poi.dto.PoiStyleDto;
 import org.poco.framework.poi.managers.IStyleManager;
@@ -10,7 +10,7 @@ import org.poco.framework.poi.managers.IStyleManager.IFillType;
 import org.poco.framework.poi.managers.IStyleManager.IForegroundColor;
 
 /**
- * @author yu-ki106f
+ * @author funahashi
  *
  */
 public class FillStyleCreator<T> extends StyleCreatorImpl<T> {
@@ -56,7 +56,7 @@ public class FillStyleCreator<T> extends StyleCreatorImpl<T> {
 		}
 		
 	
-		protected void update(Color color) {
+		protected void update(FLColor color) {
 			this.creator.getStyleDto().fillForegroundColor = color;
 		}
 
@@ -75,7 +75,7 @@ public class FillStyleCreator<T> extends StyleCreatorImpl<T> {
 		}
 		
 	
-		protected void update(Color color) {
+		protected void update(FLColor color) {
 			this.creator.getStyleDto().fillBackgroundColor = color;
 		}
 

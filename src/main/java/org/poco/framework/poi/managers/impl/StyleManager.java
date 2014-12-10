@@ -11,15 +11,16 @@ import org.poco.framework.poi.creator.style.impl.VAlignStyleCreator;
 import org.poco.framework.poi.dto.PoiStyleDto;
 import org.poco.framework.poi.factory.StyleFactory;
 import org.poco.framework.poi.managers.IStyleManager;
+import org.poco.framework.poi.managers.IPoiManager.IPoiBook;
 import org.poco.framework.poi.managers.IPoiManager.IPoiCell;
 import org.poco.framework.poi.managers.IPoiManager.IPoiRange;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Workbook;
 
 /**
- * @author yu-ki106f
+ * @author funahashi
  *
  */
 public class StyleManager<T> implements IStyleManager<T> {
@@ -86,28 +87,32 @@ public class StyleManager<T> implements IStyleManager<T> {
 	 * ワークブック
 	 * @return
 	 */
-	public HSSFWorkbook getWorkBook() {
+	public Workbook getWorkBook() {
 		return cells[0].getOrgCell().getSheet().getWorkbook();
+	}
+	
+	public IPoiBook getPoiBook() {
+		return cells[0].getBook();
 	}
 
 	/**
 	 * Cell 先頭1件
 	 * @return
 	 */
-	public HSSFCell getCell() {
+	public Cell getCell() {
 		return getCellAt(0);
 	}
 	
-	public HSSFCell getCellAt(int index) {
+	public Cell getCellAt(int index) {
 		return cells[index].getOrgCell();
 	}
 	/**
 	 * Cell 全件
 	 * @return
 	 */
-	public HSSFCell[] getCells() {
+	public Cell[] getCells() {
 		int length = cells.length;
-		HSSFCell[] result = new HSSFCell[length];
+		Cell[] result = new Cell[length];
 		for (int i=0; i<length;i++) {
 			result[i] = cells[i].getOrgCell();
 		}
@@ -145,11 +150,11 @@ public class StyleManager<T> implements IStyleManager<T> {
 	}
 	
 	public T update() {
-		HSSFCellStyle style = null;
+		CellStyle style = null;
 		//何もしていないCellは、生成しないようにIPoiCellループに変更
 		for (IPoiCell cell : cells) {
 			//スタイル取得
-			style = StyleFactory.getInstance(getWorkBook()).getStyle(styleDto, cell.getOrgCell().getCellStyle());
+			style = StyleFactory.getInstance(getPoiBook()).getStyle(styleDto, cell.getOrgCell().getCellStyle());
 			//反映
 			cell.getOrgCell().setCellStyle(style);
 

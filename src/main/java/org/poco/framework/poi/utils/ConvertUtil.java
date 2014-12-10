@@ -10,9 +10,8 @@ import org.poco.framework.poi.converter.impl.DateConverter;
 import org.poco.framework.poi.converter.impl.PoiNumberConverter;
 import org.poco.framework.poi.converter.impl.StringConverter;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 
 public class ConvertUtil {
 	
@@ -45,7 +44,7 @@ public class ConvertUtil {
 		return null;
 	}
 	
-	public static Object getValue(HSSFCell cell) {
+	public static Object getValue(Cell cell) {
 		Object result = null;
 		//タイプ分岐
 		switch (cell.getCellType())
@@ -64,9 +63,9 @@ public class ConvertUtil {
 				break;
 			case Cell.CELL_TYPE_NUMERIC:
 				double num = cell.getNumericCellValue();
-				if (HSSFDateUtil.isCellDateFormatted(cell)) {
+				if (DateUtil.isCellDateFormatted(cell)) {
 					///日付型
-					result = HSSFDateUtil.getJavaDate(num);
+					result = DateUtil.getJavaDate(num);
 				} else {
 					// 数値型
 					result = cell.getNumericCellValue();

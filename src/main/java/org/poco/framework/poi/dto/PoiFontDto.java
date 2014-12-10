@@ -3,12 +3,11 @@ package org.poco.framework.poi.dto;
 import java.lang.reflect.Field;
 
 import org.poco.framework.poi.constants.PoiConstants.BoldWeight;
-import org.poco.framework.poi.constants.PoiConstants.Color;
+import org.poco.framework.poi.constants.PoiConstants.FLColor;
 import org.poco.framework.poi.constants.PoiConstants.FontOffset;
 import org.poco.framework.poi.constants.PoiConstants.FontUnderline;
 import org.poco.framework.poi.utils.StyleUtil;
 
-import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.Font;
 
 public class PoiFontDto extends AbstractDto {
@@ -41,7 +40,7 @@ public class PoiFontDto extends AbstractDto {
 	/**
 	 * 色
 	 */
-	public Color color;
+	public FLColor color;
 	
 	/**
 	 * 取り消し線
@@ -58,9 +57,9 @@ public class PoiFontDto extends AbstractDto {
 	 */
 	public FontOffset typeOffset;
 
-	private HSSFFont font = null;
+	private Font font = null;
 	
-	public HSSFFont getOrgFont() {
+	public Font getOrgFont() {
 		return font;
 	}
 	
@@ -74,7 +73,7 @@ public class PoiFontDto extends AbstractDto {
 	 * コンストラクタ
 	 * @param font
 	 */
-	public PoiFontDto(HSSFFont font) {
+	public PoiFontDto(Font font) {
 		if (font == null) return;
 		
 		boldweight = StyleUtil.getBoldWeight(font.getBoldweight());
@@ -112,7 +111,7 @@ public class PoiFontDto extends AbstractDto {
 	 * 更新
 	 * @param font
 	 */
-	public void update(HSSFFont font) {
+	public void update(Font font) {
 		if (boldweight != null) {
 			font.setBoldweight(boldweight.value());
 		}

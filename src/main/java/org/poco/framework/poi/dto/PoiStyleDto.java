@@ -4,19 +4,19 @@ import java.lang.reflect.Field;
 
 import org.poco.framework.poi.constants.PoiConstants.Align;
 import org.poco.framework.poi.constants.PoiConstants.Border;
-import org.poco.framework.poi.constants.PoiConstants.Color;
+import org.poco.framework.poi.constants.PoiConstants.FLColor;
 import org.poco.framework.poi.constants.PoiConstants.FillPattern;
 import org.poco.framework.poi.constants.PoiConstants.VAlign;
 import org.poco.framework.poi.utils.StyleUtil;
 
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Workbook;
 
 public class PoiStyleDto extends AbstractDto {
 
-	public Color fillForegroundColor = null;
-	public Color fillBackgroundColor = null;
+	public FLColor fillForegroundColor = null;
+	public FLColor fillBackgroundColor = null;
 	public FillPattern fillPattern = null;
 	
 	public Border borderTop = null;
@@ -25,17 +25,17 @@ public class PoiStyleDto extends AbstractDto {
 	public Border borderBottom = null;
 	
 	//初期値 BLACK
-	public Color topBorderColor = Color.BLACK;
-	public Color leftBorderColor = Color.BLACK;
-	public Color rightBorderColor = Color.BLACK;
-	public Color bottomBorderColor = Color.BLACK;
+	public FLColor topBorderColor = FLColor.BLACK;
+	public FLColor leftBorderColor = FLColor.BLACK;
+	public FLColor rightBorderColor = FLColor.BLACK;
+	public FLColor bottomBorderColor = FLColor.BLACK;
 	
 	public Align align = null;
 	public VAlign valign = null;
 	
 	public String dataFormat = null;
 	public Boolean wrapText = null;
-
+	
 	/**
 	 * フィールドにしないようにprivate + getter, setter
 	 */
@@ -44,7 +44,7 @@ public class PoiStyleDto extends AbstractDto {
 	/**
 	 * スタイル
 	 */
-	private HSSFCellStyle style = null;
+	private CellStyle style = null;
 	
 	/**
 	 * fontDtoを取得します。
@@ -66,7 +66,7 @@ public class PoiStyleDto extends AbstractDto {
 	 * スタイル
 	 * @return
 	 */
-	public HSSFCellStyle getStyle() {
+	public CellStyle getStyle() {
 		return style;
 	}
 	
@@ -80,7 +80,7 @@ public class PoiStyleDto extends AbstractDto {
 	 * 基本スタイルを反映
 	 * @param style
 	 */
-	private PoiStyleDto(HSSFCellStyle style) {
+	private PoiStyleDto(CellStyle style) {
 
 		if (style == null) return;
 
@@ -119,7 +119,7 @@ public class PoiStyleDto extends AbstractDto {
 	 * 基本スタイルを反映
 	 * @param style
 	 */
-	public PoiStyleDto(HSSFCellStyle style, HSSFFont font) {
+	public PoiStyleDto(CellStyle style, Font font) {
 		this(style);
 		this.font = new PoiFontDto(font);
 	}
@@ -127,7 +127,7 @@ public class PoiStyleDto extends AbstractDto {
 	/**
 	 * 更新
 	 */
-	public void update(HSSFCellStyle style,HSSFWorkbook book) {
+	public void update(CellStyle style,Workbook book) {
 		if (fillForegroundColor != null) {
 			style.setFillForegroundColor(fillForegroundColor.value());
 		}

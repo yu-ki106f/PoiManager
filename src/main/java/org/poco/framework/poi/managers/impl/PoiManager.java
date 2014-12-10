@@ -25,21 +25,21 @@ import org.poco.framework.poi.managers.IPoiManager;
 import org.poco.framework.poi.managers.IStyleManager;
 import org.poco.framework.poi.utils.WorkbookUtil;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 
 /**
  * POI操作用流れるようなインターフェース
- * @author yu-ki106f
+ * @author funahashi
  *
  */
 public class PoiManager implements IPoiManager {
 	
 	private static Map<File,IPoiBook> cache = new HashMap<File, IPoiBook>();
-	private static Map<HSSFWorkbook,IPoiBook> cacheBook = new HashMap<HSSFWorkbook, IPoiBook>();
+	private static Map<Workbook,IPoiBook> cacheBook = new HashMap<Workbook, IPoiBook>();
 	
 	/**
 	 * Fileをキーにインスタンスを取得
@@ -67,7 +67,7 @@ public class PoiManager implements IPoiManager {
 	 * @return
 	 * @throws Exception
 	 */
-	public static synchronized IPoiBook getInstance(HSSFWorkbook book) throws Exception {
+	public static synchronized IPoiBook getInstance(Workbook book) throws Exception {
 		if (book == null) {
 			throw new Exception("Workbook is null.");
 		}
@@ -108,7 +108,7 @@ public class PoiManager implements IPoiManager {
 	 * インスタンス破棄
 	 * @param f
 	 */
-	public static void clearInstance(HSSFWorkbook book) {
+	public static void clearInstance(Workbook book) {
 		if (book == null) {
 			return;
 		}
@@ -118,28 +118,32 @@ public class PoiManager implements IPoiManager {
 	
 	/**
 	 * POIのWorkBookを取得します。
-	 * @param f
+	 * @param f ファイルが存在しない場合は、新規作成（ファイル拡張子に依存して作成するタイプを変更する）<BR/>
+	 *          nullが指定された場合は、旧バージョン（XLS）
 	 * @return
 	 */
-	public static HSSFWorkbook getWorkbook(File f) throws Exception {
-		HSSFWorkbook result = null;
-		if (!f.exists()) {
+	public static Workbook getWorkbook(File f) throws Exception {
+		Workbook result = null;
+		if (f == null) {
 			//新規生成
-			result = new HSSFWorkbook();
+			result = WorkbookUtil.createWorkBook("");
+		}
+		//新規生成
+		if (!f.exists()) {
+			result = WorkbookUtil.createWorkBook(f.getName());
 		}
 		else {
 			result = WorkbookUtil.readWorkbook(f);
 		}
 		return result;
 	}
-	
 	/**
 	 * ブック
-	 * @author yu-ki106f
+	 * @author funahashi
 	 */
 	public static class PoiBook implements IPoiBook {
 
-		private HSSFWorkbook _book = null;
+		private Workbook _book = null;
 		private File _file = null;
 		private Map<String,IPoiSheet> map = new HashMap<String, IPoiSheet>();
 		
@@ -147,7 +151,7 @@ public class PoiManager implements IPoiManager {
 		 * コンストラクタ
 		 * @param book
 		 */
-		public PoiBook(HSSFWorkbook book, File file) {
+		public PoiBook(Workbook book, File file) {
 			this._book = book;
 			this._file = file;
 		}
@@ -159,7 +163,18 @@ public class PoiManager implements IPoiManager {
 		public boolean saveBook(File f) {
 			boolean result = true;
 			try {
+				boolean isXlsx = WorkbookUtil.isXlsx(_book);
+				boolean exists = f.exists();
 				WorkbookUtil.saveWorkBook(_book,f);
+				//Poi　Bug: xlsxで、新規作成時に保存した場合、workBookがおかしくなるためリロードしておく
+				if (isXlsx && !exists) {
+					//スタイル破棄
+					StyleFactory.removeStyle(this);
+					//キャッシュ破棄
+					map.clear();
+					//リロード
+					_book = WorkbookUtil.readWorkbook(f);
+				}
 				_file = f;
 			}
 			catch(Exception e) {
@@ -168,7 +183,7 @@ public class PoiManager implements IPoiManager {
 			return result;
 		}
 
-		public HSSFWorkbook getOrgWorkBook() {
+		public Workbook getOrgWorkBook() {
 			return _book;
 		}
 
@@ -180,7 +195,7 @@ public class PoiManager implements IPoiManager {
 			if (index != -1 && !WorkbookUtil.exists(this.getOrgWorkBook(), toName)) {
 				
 				//クローン作成
-				HSSFSheet sht = this.getOrgWorkBook().cloneSheet(index);
+				Sheet sht = this.getOrgWorkBook().cloneSheet(index);
 				//リネーム	
 				WorkbookUtil.rename(sht, toName);
 			}
@@ -192,7 +207,7 @@ public class PoiManager implements IPoiManager {
 			IPoiSheet psheet = map.get(name);
 			
 			if (psheet == null) {
-				HSSFSheet sht = this.getOrgWorkBook().getSheet(name);
+				Sheet sht = this.getOrgWorkBook().getSheet(name);
 				if (sht == null) {
 					sht = this.getOrgWorkBook().createSheet();
 					//リネーム
@@ -224,29 +239,33 @@ public class PoiManager implements IPoiManager {
 
 	/**
 	 * シート
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public static class PoiSheet implements IPoiSheet {
 
-		private HSSFSheet _sh = null;
+		private Sheet _sh = null;
 		private Map<PoiPosition,IPoiCell> map = new HashMap<PoiPosition, IPoiCell>();
 		private PoiBook _parent;
+		
 		/**
 		 * コンストラクタ
 		 * @param book
 		 * @param sh
 		 */
-		public PoiSheet(HSSFSheet sh, PoiBook parent) {
+		public PoiSheet(Sheet sh, PoiBook parent) {
 			this._sh = sh;
 			this._parent = parent;
 		}
 		
 
-		public HSSFSheet getOrgSheet() {
+		public Sheet getOrgSheet() {
 			return this._sh;
 		}
 
+		public IPoiBook getBook() {
+			return _parent;
+		}
 
 		public IPoiCell cell(int x, int y) {
 			PoiPosition pos = PosFactory.getInstance(x, y);
@@ -356,7 +375,7 @@ public class PoiManager implements IPoiManager {
 		}
 
 
-		public HSSFWorkbook getOrgWorkBook() {
+		public Workbook getOrgWorkBook() {
 			return _parent.getOrgWorkBook();
 		}
 
@@ -405,12 +424,11 @@ public class PoiManager implements IPoiManager {
 			}
 			return insertRows(pos.top, pos.bottom - pos.top + 1);
 		}
-		
 	}
 
 	/**
 	 * 範囲
-	 * @author yu-ki106f
+	 * @author funahashi
 	 */
 	public static class PoiRange  extends SheetChildBase implements IPoiRange {
 		private IPoiCell[] _cells;
@@ -581,15 +599,15 @@ public class PoiManager implements IPoiManager {
 	
 	/**
 	 * セル
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public static class PoiCell extends SheetChildBase implements IPoiCell {
 		private static final int row_multiple = 20;
 		private static final int column_multiple = 276;
 		
-		private HSSFRow _hRow = null;
-		private HSSFCell _hCell = null;
+		private Row _hRow = null;
+		private Cell _hCell = null;
 		private PoiPosition _pos = null;
 		private ValueConverter _val = null;
 		
@@ -623,7 +641,7 @@ public class PoiManager implements IPoiManager {
 		}
 		
 
-		public HSSFCell getOrgCell() {
+		public Cell getOrgCell() {
 			if (_hCell == null) {
 				_hCell = WorkbookUtil.getCell(getOrgRow(), x());
 			}
@@ -631,7 +649,7 @@ public class PoiManager implements IPoiManager {
 		}
 
 
-		public HSSFRow getOrgRow() {
+		public Row getOrgRow() {
 			if (_hRow == null) {
 				_hRow = WorkbookUtil.getRow(getOrgSheet(), y());
 			}
@@ -752,13 +770,16 @@ public class PoiManager implements IPoiManager {
 
 	/**
 	 * シートの子供ベース
-	 * @author yu-ki106f
+	 * @author funahashi
 	 *
 	 */
 	public static class SheetChildBase implements IPoiSheet {
 		protected IPoiSheet _parent;
 	
-
+		public IPoiBook getBook() {
+			return _parent.getBook();
+		}
+		
 		//--- sheetメソッド ----//
 
 		public IPoiCell cell(int x, int y) {
@@ -771,7 +792,7 @@ public class PoiManager implements IPoiManager {
 		}
 
 
-		public HSSFSheet getOrgSheet() {
+		public Sheet getOrgSheet() {
 			return _parent.getOrgSheet();
 		}
 
@@ -854,7 +875,7 @@ public class PoiManager implements IPoiManager {
 		}
 
 
-		public HSSFWorkbook getOrgWorkBook() {
+		public Workbook getOrgWorkBook() {
 			return _parent.getOrgWorkBook();
 		}
 
@@ -862,6 +883,7 @@ public class PoiManager implements IPoiManager {
 		public IPoiSheet sheet(String name) {
 			return _parent.sheet(name);
 		}
+
 	}
 
 }

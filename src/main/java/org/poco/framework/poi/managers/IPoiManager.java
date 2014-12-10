@@ -10,10 +10,10 @@ import org.poco.framework.poi.dto.PoiPosition;
 import org.poco.framework.poi.dto.PoiRect;
 import org.poco.framework.poi.dto.PoiStyleDto;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 
 public interface IPoiManager {
 	
@@ -48,7 +48,7 @@ public interface IPoiManager {
 		 */
 		boolean saveBook();
 		
-		HSSFWorkbook getOrgWorkBook();
+		Workbook getOrgWorkBook();
 	}
 	
 	public interface IPoiSheet extends IPoiBook {
@@ -57,7 +57,8 @@ public interface IPoiManager {
 		 * @param name
 		 * @return
 		 */
-		HSSFSheet getOrgSheet();
+		Sheet getOrgSheet();
+		IPoiBook getBook();
 		
 		IPoiCell cell(int x, int y);
 		IPoiCell cell(PoiPosition pos);
@@ -113,8 +114,8 @@ public interface IPoiManager {
 	
 	public interface IPoiCell extends IPoiSheet {
 		
-		HSSFRow getOrgRow();
-		HSSFCell getOrgCell();
+		Row getOrgRow();
+		Cell getOrgCell();
 
 		IValueConverter value();
 

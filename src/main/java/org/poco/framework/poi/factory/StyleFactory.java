@@ -7,24 +7,24 @@ import java.util.Map;
 
 import org.poco.framework.poi.dto.PoiFontDto;
 import org.poco.framework.poi.dto.PoiStyleDto;
+import org.poco.framework.poi.managers.IPoiManager.IPoiBook;
 
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
 
 /**
  * キャッシュするのでメモリ開放が必要
- * @author yu-ki106f
+ * @author funahashi
  *
  */
 public class StyleFactory {
 	
-	private static Map<HSSFWorkbook,StyleFactory> factoryCashe = new HashMap<HSSFWorkbook, StyleFactory>();
+	private static Map<IPoiBook,StyleFactory> factoryCashe = new HashMap<IPoiBook, StyleFactory>();
 	
 	private List<PoiStyleDto> cashe = new ArrayList<PoiStyleDto>();
 	private List<PoiFontDto> fontCashe = new ArrayList<PoiFontDto>();
 	
-	private HSSFWorkbook book = null;
+	private IPoiBook book = null;
 
 	public static class IsFont {
 		private Boolean value = false;
@@ -35,7 +35,13 @@ public class StyleFactory {
 			return value;
 		}
 	}
-	
+	/**
+	 * 指定したBookのスタイルを開放する
+	 * @param book
+	 */
+	public static void removeStyle(IPoiBook book){
+		factoryCashe.remove(book);
+	}
 	/**
 	 * 開放
 	 */
@@ -48,7 +54,7 @@ public class StyleFactory {
 	 * @param book
 	 * @return
 	 */
-	public static StyleFactory getInstance(HSSFWorkbook book) {
+	public static StyleFactory getInstance(IPoiBook book) {
 		StyleFactory factory = factoryCashe.get(book);
 		if (factory == null) {
 			factory = new StyleFactory(book);
@@ -61,12 +67,12 @@ public class StyleFactory {
 	 * コンストラクタ
 	 * @param book
 	 */
-	private StyleFactory(HSSFWorkbook book) {
+	private StyleFactory(IPoiBook book) {
 		this.book = book;
 
 		PoiFontDto dto;
-		for (short idx = 0; idx < book.getNumberOfFonts(); idx++ ) {
-			dto = new PoiFontDto(book.getFontAt(idx));
+		for (short idx = 0; idx < book.getOrgWorkBook().getNumberOfFonts(); idx++ ) {
+			dto = new PoiFontDto(book.getOrgWorkBook().getFontAt(idx));
 			if (searchFont(dto)==null) {
 				fontCashe.add(0,dto);
 			}
@@ -74,8 +80,8 @@ public class StyleFactory {
 		
 		PoiStyleDto dto2;
 		IsFont isFont = new IsFont();
-		for (short idx = 0; idx < book.getNumCellStyles(); idx++ ) {
-			dto2 = new PoiStyleDto(book.getCellStyleAt(idx), book.getFontAt(book.getCellStyleAt(idx).getFontIndex()) );
+		for (short idx = 0; idx < book.getOrgWorkBook().getNumCellStyles(); idx++ ) {
+			dto2 = new PoiStyleDto(book.getOrgWorkBook().getCellStyleAt(idx), book.getOrgWorkBook().getFontAt(book.getOrgWorkBook().getCellStyleAt(idx).getFontIndex()) );
 			if (searchStyle(dto2,isFont) == null) {
 				if (isFont.getValue() == false) {
 					fontCashe.add(0,dto2.getFont());
@@ -90,7 +96,7 @@ public class StyleFactory {
 	 * @param param
 	 * @return
 	 */
-	private HSSFFont searchFont(PoiFontDto param) {
+	private Font searchFont(PoiFontDto param) {
 
 		for (PoiFontDto fontDto: fontCashe) {
 			if (fontDto.equals(param)) {
@@ -105,8 +111,8 @@ public class StyleFactory {
 	 * @param param
 	 * @return
 	 */
-	private HSSFCellStyle searchStyle(PoiStyleDto param, IsFont isFont) {
-		HSSFFont font = searchFont(param.getFont());
+	private CellStyle searchStyle(PoiStyleDto param, IsFont isFont) {
+		Font font = searchFont(param.getFont());
 		if (font == null) {
 			isFont.setValue(false);
 			return null;
@@ -135,16 +141,16 @@ public class StyleFactory {
 			fontCashe.add(0,dto);
 		}
 	}
-	
+
 	/**
 	 * オリジナルからのマージ処理
 	 * @param src 設定内容
 	 * @param orgCellStyle 元のセルスタイル
 	 * @return StyleDto
 	 */
-	private PoiStyleDto mergeStyle(PoiStyleDto src, HSSFCellStyle orgCellStyle)
+	private PoiStyleDto mergeStyle(PoiStyleDto src, CellStyle orgCellStyle)
 	{
-		PoiFontDto font = new PoiFontDto(orgCellStyle.getFont(this.book));
+		PoiFontDto font = new PoiFontDto(this.book.getOrgWorkBook().getFontAt(orgCellStyle.getFontIndex()));
 
 		//マージ
 		font.merge(src.getFont());
@@ -166,13 +172,13 @@ public class StyleFactory {
 	 * @param orgCellStyle
 	 * @return
 	 */
-	public /*synchronized*/ HSSFCellStyle getStyle(PoiStyleDto dto, HSSFCellStyle orgCellStyle) {
+	public /*synchronized*/ CellStyle getStyle(PoiStyleDto dto, CellStyle orgCellStyle) {
 		PoiStyleDto merge = mergeStyle(dto, orgCellStyle);
 		IsFont isFont = new IsFont();
-		HSSFCellStyle style = searchStyle(merge, isFont);
+		CellStyle style = searchStyle(merge, isFont);
 		//存在しない場合は、作成する
 		if (style == null) {
-			HSSFFont font = merge.getFont().getOrgFont();
+			Font font = merge.getFont().getOrgFont();
 			//ない場合
 			if (isFont.getValue() == false) {
 				//作成
@@ -189,8 +195,8 @@ public class StyleFactory {
 	 * @param book
 	 * @return
 	 */
-	public HSSFFont createFont(PoiFontDto updateDto) {
-		HSSFFont result = book.createFont();
+	public Font createFont(PoiFontDto updateDto) {
+		Font result = book.getOrgWorkBook().createFont();
 		updateDto.update(result);
 		PoiFontDto dto = new PoiFontDto(result);
 		//キャッシュ追加
@@ -206,10 +212,10 @@ public class StyleFactory {
 	 * @param font
 	 * @return
 	 */
-	public HSSFCellStyle createStyle(HSSFFont font,PoiStyleDto updateDto) {
+	public CellStyle createStyle(Font font,PoiStyleDto updateDto) {
 		
-		HSSFCellStyle result = book.createCellStyle();
-		updateDto.update(result,book);
+		CellStyle result = book.getOrgWorkBook().createCellStyle();
+		updateDto.update(result,book.getOrgWorkBook());
 		result.setFont(font);
 		
 		PoiStyleDto dto = new PoiStyleDto(result,font);
