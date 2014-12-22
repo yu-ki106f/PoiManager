@@ -56,23 +56,25 @@ PoiManager
 	    .cell("B1").comment("ÉRÉÅÉìÉgÇ≈Ç∑").write()
 	.saveBook();                                //save
 
-####load template
-  PoiManager.getInstance(new File("template.xlsx")).getReadWriter()
+####Sample Code
+	//write data
+	PoiManager.getInstance(new File("template.xlsx")).getReadWriter()
             .loadFromXml("setting.xml")		//Please be created using the PoiManager.xla
-            .write(InputDataDto)
+            .write(inputDataDto)
             .saveBook(new File("output.xlsx"));
 
-  PoiManager.getInstance(new File("template.xls")).getReadWriter()
+	PoiManager.getInstance(new File("template.xls")).getReadWriter()
             .loadFromXml("setting.xml")		//Please be created using the PoiManager.xla
             .setMaxRows(65000)
-            .write(InputDataDto)
+            .write(inputDataDto)
             .saveBook(new File("output.xls"));
 
-####load data
-  LoadData data = PoiManager.getInstance(new File("template.xlsx")).getReadWriter()
+####Sample Code
+	//read data
+	LoadData data = PoiManager.getInstance(new File("input.xlsx")).getReadWriter()
                   .loadFromXml("setting.xml")		//Please be created using the PoiManager.xla
                   .read(LoadData.class);
 
-  LoadData data = PoiManager.getInstance(new File("template.xls")).getReadWriter()
+	LoadData data = PoiManager.getInstance(new File("input.xls")).getReadWriter()
                   .loadFromXml("setting.xml")		//Please be created using the PoiManager.xla
                   .read(LoadData.class);
