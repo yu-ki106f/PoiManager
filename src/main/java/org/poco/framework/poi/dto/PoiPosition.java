@@ -2,8 +2,11 @@ package org.poco.framework.poi.dto;
 
 
 public class PoiPosition {
-	public Integer x;
-	public Integer y;
+	public Integer x = 0;
+	public Integer y = 0;
+	
+	public PoiPosition() {
+	}
 	
 	public PoiPosition(Integer x, Integer y) {
 		this.x = x;

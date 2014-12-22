@@ -15,7 +15,7 @@ import org.poco.framework.poi.managers.IStyleManager.IFontType;
 import org.poco.framework.poi.managers.IStyleManager.IFontUnderline;
 
 /**
- * @author funahashi
+ * @author yu-ki
  *
  */
 public class FontStyleCreator<T> extends StyleCreatorImpl<T> {

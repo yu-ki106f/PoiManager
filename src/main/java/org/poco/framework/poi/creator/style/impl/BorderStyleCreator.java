@@ -27,7 +27,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 	
 	/**
 	 * IBorderTypeの実装
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public static class BorderTypeImpl<T> implements IBorderType<T>
@@ -71,7 +71,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 
 	/**
 	 * 中継インターフェース
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public interface IKindTyep<T> {
@@ -83,7 +83,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 	
 	/**
 	 * ボーダー種類の実装
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public static class BoaderKindImpl<T> implements IBorderKind<T>, IKindTyep<T>
@@ -128,7 +128,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 	
 	/**
 	 * IBorderColorの実装
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public static class BorderColorImpl<T> extends AbstractColorImpl<T> implements IBorderColor<T>
@@ -173,7 +173,7 @@ public class BorderStyleCreator<T> extends StyleCreatorImpl<T> {
 
 	/**
 	 * 
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public static class BorderStyleImpl<T> extends AbstractBorderImpl<T> implements IBorderStyle<T>

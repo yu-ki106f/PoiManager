@@ -10,7 +10,7 @@ import org.poco.framework.poi.managers.IStyleManager.IFillType;
 import org.poco.framework.poi.managers.IStyleManager.IForegroundColor;
 
 /**
- * @author funahashi
+ * @author yu-ki
  *
  */
 public class FillStyleCreator<T> extends StyleCreatorImpl<T> {

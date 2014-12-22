@@ -47,7 +47,16 @@ public interface IPoiManager {
 		 * @return
 		 */
 		boolean saveBook();
+		/**
+		 * readwriter取得
+		 * @return
+		 */
+		IReadWriter getReadWriter();
 		
+		/**
+		 * オリジナルWorkBook取得
+		 * @return
+		 */
 		Workbook getOrgWorkBook();
 	}
 	

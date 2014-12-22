@@ -20,7 +20,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Workbook;
 
 /**
- * @author funahashi
+ * @author yu-ki
  *
  */
 public class StyleManager<T> implements IStyleManager<T> {
@@ -38,10 +38,7 @@ public class StyleManager<T> implements IStyleManager<T> {
 	 */
 	public StyleManager(IPoiCell value) {
 		this(value, 
-			new PoiStyleDto(
-				//value.getOrgCell().getCellStyle(),
-				//value.getOrgCell().getCellStyle().getFont(value.getOrgCell().getSheet().getWorkbook() ) 
-				)
+			new PoiStyleDto()
 		);
 
 	}
@@ -63,10 +60,7 @@ public class StyleManager<T> implements IStyleManager<T> {
 	 */
 	public StyleManager(IPoiRange value) {
 		this(value, 
-				new PoiStyleDto(
-						//value.getCells()[0].getOrgCell().getCellStyle(), 
-						//value.getCells()[0].getOrgCell().getCellStyle().getFont(value.getCells()[0].getOrgCell().getSheet().getWorkbook() ) 
-						)
+				new PoiStyleDto()
 				);
 	}
 	
@@ -158,6 +152,14 @@ public class StyleManager<T> implements IStyleManager<T> {
 			//反映
 			cell.getOrgCell().setCellStyle(style);
 
+		}
+		return parent;
+	}
+	public T forceUpdate(CellStyle style) {
+		//何もしていないCellは、生成しないようにIPoiCellループに変更
+		for (IPoiCell cell : cells) {
+			//反映
+			cell.getOrgCell().setCellStyle(style);
 		}
 		return parent;
 	}

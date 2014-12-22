@@ -80,7 +80,7 @@ public class PoiStyleDto extends AbstractDto {
 	 * 基本スタイルを反映
 	 * @param style
 	 */
-	private PoiStyleDto(CellStyle style) {
+	public PoiStyleDto(CellStyle style) {
 
 		if (style == null) return;
 

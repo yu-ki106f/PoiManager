@@ -14,7 +14,7 @@ import org.apache.poi.ss.usermodel.Font;
 
 /**
  * キャッシュするのでメモリ開放が必要
- * @author funahashi
+ * @author yu-ki
  *
  */
 public class StyleFactory {

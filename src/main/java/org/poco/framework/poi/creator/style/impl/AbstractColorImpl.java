@@ -299,4 +299,9 @@ public abstract class AbstractColorImpl<T> implements IColor<T> {
 		update(PoiConstants.FLColor.YELLOW);
 		return getStyle();
 	}
+
+	public IStyleManager<T> name(String name) {
+		update(FLColor.valueOf(name));
+		return getStyle();
+	}
 }

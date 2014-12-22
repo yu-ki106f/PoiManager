@@ -10,7 +10,7 @@
     <!-- javac コンパイルオプション定義 -->
     <property name = "debug.javac" value = "on"/>
     <property name = "optimize.javac" value = "off"/>
-    <property name = "target.javac" value = "1.5"/>
+    <property name = "target.javac" value = "1.6"/>
     <property name = "encoding.javac" value = "UTF-8"/>
 	<property name = "lib.dir"   location="./lib"/>
 	
@@ -41,7 +41,7 @@
         <mkdir dir = "${dest.dir}"/>
         <mkdir dir = "${bin.dir}"/>
 
-        <javac srcdir = "${src.dir}" destdir = "${bin.dir}" debug = "${debug.javac}" target = "${target.javac}" encoding = "${encoding.javac}" deprecation = "off" >
+        <javac includeantruntime="true" srcdir = "${src.dir}" destdir = "${bin.dir}" debug = "${debug.javac}" target = "${target.javac}" encoding = "${encoding.javac}" deprecation = "off" >
         	<compilerarg value="-Xlint:unchecked" />
             <classpath refid = "PoiManager.classpath"/>
             <include name = "**/*.java"/>
@@ -52,8 +52,8 @@
 
 		<echo>create PoiManager.jar</echo>
 		
-    	<delete file = "${dest.dir}/PoiManager-3.10.0.jar"/>
-        <jar jarfile = "${dest.dir}/PoiManager-3.10.0.jar" duplicate = "preserve">
+    	<delete file = "${dest.dir}/PoiManager-3.10.1.jar"/>
+        <jar jarfile = "${dest.dir}/PoiManager-3.10.1.jar" duplicate = "preserve">
             <fileset dir = "bin">
             </fileset>
         </jar>

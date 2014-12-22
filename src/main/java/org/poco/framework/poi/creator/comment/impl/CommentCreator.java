@@ -18,7 +18,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 
 /**
- * @author funahashi
+ * @author yu-ki
  *
  */
 public class CommentCreator<T> implements ICommentCreator<T> {

@@ -9,6 +9,7 @@ import java.util.Iterator;
 
 import org.poco.framework.poi.dto.PoiPosition;
 import org.poco.framework.poi.dto.PoiRect;
+import org.poco.framework.poi.managers.IPoiManager.IPoiSheet;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -184,7 +185,7 @@ public class WorkbookUtil {
 		return false;
 	}
 	
-	public static PoiRect analyseRangeAddress(String value) {
+	public static PoiRect analyseRangeAddress(String value,IPoiSheet sheet) {
 
 		if (value == null) return null;
 		
@@ -198,7 +199,7 @@ public class WorkbookUtil {
 		}
 		else if (values.length == 2){
 			//A:A or 1:1 (列、行指定の場合）
-			PoiRect rect = analyseSelectColumnOrRow(value);
+			PoiRect rect = analyseSelectColumnOrRow(value,sheet);
 			if (rect != null) {
 				return rect;
 			}
@@ -208,7 +209,7 @@ public class WorkbookUtil {
 		throw new ArrayIndexOutOfBoundsException("error[" + value + "]");
 	}
 
-	public static PoiRect analyseSelectColumn(String value) {
+	public static PoiRect analyseSelectColumn(String value,IPoiSheet sheet) {
 		if (value == null) return null;
 		
 		String tmp = value.replaceAll("\\$", "").toUpperCase();
@@ -218,17 +219,18 @@ public class WorkbookUtil {
 		Integer pos2 = 0;
 		//列指定
 		if (!tmp.equals(columStr)){
+			Integer maxRow = sheet == null ? 65535 : sheet.getOrgSheet().getLastRowNum();
 			values = columStr.split("#");
 			if (values.length == 2 ) {
 				pos1 = alpabetToNumber(values[0]);
 				pos2 = alpabetToNumber(values[1]);
-				return new PoiRect(0,pos1,pos2,65535);
+				return new PoiRect(0,pos1,pos2,maxRow);
 			}
 		}
 		return null;
 	}
 	
-	public static PoiRect analyseSelectRow(String value) {
+	public static PoiRect analyseSelectRow(String value,IPoiSheet sheet) {
 		if (value == null) return null;
 		
 		String tmp = value.replaceAll("\\$", "").toUpperCase();
@@ -238,28 +240,49 @@ public class WorkbookUtil {
 		Integer pos2 = 0;
 		//行指定
 		if (!tmp.equals(rowStr)) {
+			Integer maxColumn = Integer.valueOf(sheet == null ? 255 : getLastColumns(sheet));
 			values = rowStr.split("#");
 			if (values.length == 2 ) {
 				pos1 = Integer.valueOf(values[0]);
 				pos2 = Integer.valueOf(values[1]);
-				return new PoiRect(pos1-1,0,255,pos2-1);
+				return new PoiRect(pos1-1,0,maxColumn,pos2-1);
 			}
 		}
 		return null;
+	}
+	public static Short getLastColumns(IPoiSheet sheet) {
+		return getLastColumns(sheet.getOrgSheet());
+	}
+	public static Short getLastColumns(Sheet sheet) {
+		Integer first = sheet.getFirstRowNum();
+		Integer last = sheet.getLastRowNum();
+		Row row;
+		Integer result = 0;
+		Integer value;
+		boolean isXlsx = isXlsx(sheet.getWorkbook());
+		for (Integer i = first ; i <= last; i++) {
+			row = sheet.getRow(i);
+			if (row == null) {
+				continue;
+			}
+			value = row.getLastCellNum() - 1;
+			result = result < value ? value : result; 
+		}
+		return isXlsx ? result.shortValue() : result > 255 ? 255 : result.shortValue();
 	}
 	/**
 	 * 
 	 * @param value
 	 * @return
 	 */
-	public static PoiRect analyseSelectColumnOrRow(String value) {
+	public static PoiRect analyseSelectColumnOrRow(String value,IPoiSheet sheet) {
 		if (value == null) return null;
 		
 		PoiRect result = null;
 		
-		result = analyseSelectColumn(value);
+		result = analyseSelectColumn(value,sheet);
 		if (result == null) {
-			result = analyseSelectRow(value);
+			result = analyseSelectRow(value,sheet);
 		}
 
 		return result;
@@ -309,9 +332,9 @@ public class WorkbookUtil {
 			
 			y = Integer.valueOf(row) - 1;
 			
-			if (x >= 0 && x <= 255 && y >= 0 && y <= 65535) {
+			//if (x >= 0 && x <= 255 && y >= 0 && y <= 65535) {
 				return new PoiPosition(x, y);
-			}
+			//}
 		}
 		throw new ArrayIndexOutOfBoundsException("error[" + value + "]");
 	}

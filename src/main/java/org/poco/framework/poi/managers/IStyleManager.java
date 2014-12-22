@@ -69,6 +69,7 @@ public interface IStyleManager<T> {
 		IStyleManager<T> ROYAL_BLUE();
 		IStyleManager<T> LIGHT_CORNFLOWER_BLUE();
 		IStyleManager<T> TAN();
+		IStyleManager<T> name(String name);
 	}
 	
 	public interface IAlignStyle<T> extends IStyleBase<T> {

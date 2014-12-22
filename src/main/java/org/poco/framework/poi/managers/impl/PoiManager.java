@@ -22,6 +22,7 @@ import org.poco.framework.poi.factory.PosFactory;
 import org.poco.framework.poi.factory.StyleFactory;
 import org.poco.framework.poi.factory.StyleManagerFactory;
 import org.poco.framework.poi.managers.IPoiManager;
+import org.poco.framework.poi.managers.IReadWriter;
 import org.poco.framework.poi.managers.IStyleManager;
 import org.poco.framework.poi.utils.WorkbookUtil;
 
@@ -33,7 +34,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 
 /**
  * POI操作用流れるようなインターフェース
- * @author funahashi
+ * @author yu-ki
  *
  */
 public class PoiManager implements IPoiManager {
@@ -139,12 +140,13 @@ public class PoiManager implements IPoiManager {
 	}
 	/**
 	 * ブック
-	 * @author funahashi
+	 * @author yu-ki
 	 */
 	public static class PoiBook implements IPoiBook {
 
 		private Workbook _book = null;
 		private File _file = null;
+		private IReadWriter rw;
 		private Map<String,IPoiSheet> map = new HashMap<String, IPoiSheet>();
 		
 		/**
@@ -186,7 +188,6 @@ public class PoiManager implements IPoiManager {
 		public Workbook getOrgWorkBook() {
 			return _book;
 		}
-
 
 		public IPoiSheet cloneSheet(String fromName, String toName) {
 			
@@ -234,12 +235,20 @@ public class PoiManager implements IPoiManager {
 			}
 			map.put(name, sheet);
 		}
-
+		/**
+		 * xmlによるCellロケーションに対して、書き込み、読み込みを行う
+		 */
+		public IReadWriter getReadWriter() {
+			if (rw == null) {
+				rw = new ReadWriter(this);
+			}
+			return rw;
+		}
 	}
 
 	/**
 	 * シート
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public static class PoiSheet implements IPoiSheet {
@@ -271,9 +280,7 @@ public class PoiManager implements IPoiManager {
 			PoiPosition pos = PosFactory.getInstance(x, y);
 			IPoiCell cell = map.get(pos);
 			if (cell == null) {
-				//HSSFRow hRow = WorkbookUtil.getRow(getOrgSheet(), pos.y);
-				//HSSFCell hCell = WorkbookUtil.getCell(hRow, pos.x);
-				cell = new PoiCell(/*hRow, hCell,*/ pos, this);
+				cell = new PoiCell(pos, this);
 				map.put(pos, cell);
 			}
 			return cell;
@@ -301,12 +308,11 @@ public class PoiManager implements IPoiManager {
 
 
 		public IPoiRange range(String address) {
-			PoiRect rect = WorkbookUtil.analyseRangeAddress(address);
+			PoiRect rect = WorkbookUtil.analyseRangeAddress(address,this);
 			//範囲
 			return range(rect);
 		}
 		
-
 		public IPoiRange range(PoiRect rect) {
 			return createRange(rect.left,rect.top,rect.right,rect.bottom, false);
 		}
@@ -343,7 +349,7 @@ public class PoiManager implements IPoiManager {
 
 
 		public IPoiRange merge(String address) {
-			PoiRect rect = WorkbookUtil.analyseRangeAddress(address);
+			PoiRect rect = WorkbookUtil.analyseRangeAddress(address,this);
 			//範囲
 			return merge(rect);
 		}
@@ -418,17 +424,22 @@ public class PoiManager implements IPoiManager {
 		 */
 
 		public IPoiRange insertRows(String address) {
-			PoiRect pos = WorkbookUtil.analyseSelectRow(address);
+			PoiRect pos = WorkbookUtil.analyseSelectRow(address,this);
 			if (pos == null) {
 				throw new ArrayIndexOutOfBoundsException("error[" + address + "]");
 			}
 			return insertRows(pos.top, pos.bottom - pos.top + 1);
 		}
+
+
+		public IReadWriter getReadWriter() {
+			return _parent.getReadWriter();
+		}
 	}
 
 	/**
 	 * 範囲
-	 * @author funahashi
+	 * @author yu-ki
 	 */
 	public static class PoiRange  extends SheetChildBase implements IPoiRange {
 		private IPoiCell[] _cells;
@@ -599,7 +610,7 @@ public class PoiManager implements IPoiManager {
 	
 	/**
 	 * セル
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public static class PoiCell extends SheetChildBase implements IPoiCell {
@@ -625,10 +636,7 @@ public class PoiManager implements IPoiManager {
 		 * @param pos
 		 * @param parent
 		 */
-		public PoiCell(/*HSSFRow row, HSSFCell cell,*/ PoiPosition pos,IPoiSheet parent) {
-			//row と　cellは使用されたときに生成するように修正
-			//this.hRow = row;
-			//this.hCell = cell;
+		public PoiCell(PoiPosition pos,IPoiSheet parent) {
 			this._pos = pos;
 			this._parent = parent;
 		}
@@ -770,7 +778,7 @@ public class PoiManager implements IPoiManager {
 
 	/**
 	 * シートの子供ベース
-	 * @author funahashi
+	 * @author yu-ki
 	 *
 	 */
 	public static class SheetChildBase implements IPoiSheet {
@@ -882,6 +890,10 @@ public class PoiManager implements IPoiManager {
 
 		public IPoiSheet sheet(String name) {
 			return _parent.sheet(name);
+		}
+
+		public IReadWriter getReadWriter() {
+			return _parent.getReadWriter();
 		}
 
 	}

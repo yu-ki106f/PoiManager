@@ -13,5 +13,5 @@ public interface IValueConverter {
 	Integer getInteger();
 	Byte getByte();
 	Boolean getBoolean();
-
+	Object getOriginalValue();
 }
