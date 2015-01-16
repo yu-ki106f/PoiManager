@@ -305,7 +305,13 @@ public class ReadWriter implements IReadWriter {
 			cell.setValue(value);
 		}
 		else {
-			cell.setValue(value, clazz);
+			try {
+				cell.setValue(value, clazz);
+			}
+			catch(Exception e) {
+				//例外時は自動設定
+				cell.setValue(value);
+			}
 		}
 		return cell;
 	}
@@ -657,7 +663,7 @@ public class ReadWriter implements IReadWriter {
 		BLANK(String.class),
 		BOOLEAN(Boolean.class),
 		ERROR(String.class),
-		NUMERIC(Number.class),
+		NUMERIC(Double.class),
 		FORMULA(String.class),
 		DATE_TIME(Date.class),
 		DATE(Date.class);
