@@ -13,21 +13,20 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.poco.framework.poi.converter.IConverter;
 import org.poco.framework.poi.dto.PoiPosition;
 import org.poco.framework.poi.exception.PoiException;
-import org.poco.framework.poi.managers.IReadWriter;
-import org.poco.framework.poi.managers.IStyleManager;
 import org.poco.framework.poi.managers.IPoiManager.IPoiBook;
 import org.poco.framework.poi.managers.IPoiManager.IPoiCell;
 import org.poco.framework.poi.managers.IPoiManager.IPoiSheet;
+import org.poco.framework.poi.managers.IReadWriter;
+import org.poco.framework.poi.managers.IStyleManager;
 import org.poco.framework.poi.utils.ConvertUtil;
 import org.poco.framework.poi.utils.PropertyUtil;
 import org.poco.framework.poi.utils.WorkbookUtil;
 import org.poco.framework.poi.utils.XMLUtils;
-
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -43,6 +42,16 @@ public class ReadWriter implements IReadWriter {
 	
 	public static Integer MAX_ROWS = 65535;
 
+	/**
+	 * テンプレートのクローンを返す 
+	 * @return
+	 */
+	public XMLBook getTempleteXMLClone() {
+		if (templeteXml != null) {
+			return templeteXml.clone();
+		}
+		return null;
+	}
 	public IReadWriter setMaxRows(Integer value) {
 		MAX_ROWS = value;
 		return this;
@@ -80,16 +89,17 @@ public class ReadWriter implements IReadWriter {
 	/**
 	 * PoiBookに指定されたデータを書き込み
 	 * @param data
+	 * @param templete テンプレートデータを指定
 	 * @return
-	 * @throws PoiException 
+	 * @throws PoiException
 	 */
-	public IPoiBook write(Object data) throws PoiException {
-		if (templeteXml == null) {
+	public IPoiBook write(Object data, XMLBook templete) throws PoiException {
+		if (templete == null) {
 			throw new PoiException("It is not crowded read the XML file.");
 		}
 		try {
 			IPoiSheet sheet;
-			for (XMLSheet xsheet : templeteXml.sheets) {
+			for (XMLSheet xsheet : templete.sheets) {
 				//シート取得
 				sheet = book.sheet(xsheet.name);
 				//入出力設定文字削除
@@ -107,26 +117,38 @@ public class ReadWriter implements IReadWriter {
 	}
 	
 	/**
+	 * PoiBookに指定されたデータを書き込み
+	 * @param data
+	 * @return
+	 * @throws PoiException 
+	 */
+	public IPoiBook write(Object data) throws PoiException {
+		return write(data,templeteXml);
+	}
+
+	/**
 	 * PoiBookから設定ファイルルールにてデータ読み込み
 	 * @param <T>
 	 * @param baseClass
+	 * @param templete テンプレートデータを指定
 	 * @return
+	 * @throws PoiException
 	 */
-	public <T> T read(Class<T> baseClass) throws PoiException {
+	public <T> T read(Class<T> baseClass, XMLBook templete) throws PoiException {
 		T result = null;
-		if (templeteXml == null) {
+		if (templete == null) {
 			throw new PoiException("It is not crowded read the XML file.");
 		}
 		try {
 			result = baseClass.newInstance();
 			IPoiSheet sheet;
-			for (XMLSheet xsheet : templeteXml.sheets) {
+			for (XMLSheet xsheet : templete.sheets) {
 				//シート取得
 				sheet = book.sheet(xsheet.name);
 				//個別項目読み込み
-				onceRead(sheet, xsheet.onces, result);
+				onceRead(sheet, xsheet.onces, result, templete.defaultPackage);
 				//リスト項目読み込み
-				listRead(sheet, xsheet.lists, result);
+				listRead(sheet, xsheet.lists, result, templete.defaultPackage);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -135,18 +157,28 @@ public class ReadWriter implements IReadWriter {
 		return result;
 	}
 	/**
+	 * PoiBookから設定ファイルルールにてデータ読み込み
+	 * @param <T>
+	 * @param baseClass
+	 * @return
+	 */
+	public <T> T read(Class<T> baseClass) throws PoiException {
+		return read(baseClass,templeteXml);
+	}
+	
+	/**
 	 * 個別データをオブジェクトに格納する
 	 * @param sheet　シート
 	 * @param onces　個別入出力指定リスト
 	 * @param data　オブジェクト
 	 * @throws Exception
 	 */
-	private void onceRead(IPoiSheet sheet, List<XMLDetail> onces, Object data) throws Exception {
+	private void onceRead(IPoiSheet sheet, List<XMLDetail> onces, Object data, String defaultPackage) throws Exception {
 		Object dto;
 		for (XMLDetail xdetail : onces) {
 			dto = PropertyUtil.getValue(data, xdetail.name);
 			if (dto == null) {
-				dto = getDtoClass(xdetail.className).newInstance();
+				dto = getDtoClass(xdetail.className,defaultPackage).newInstance();
 				PropertyUtil.setValue(data, xdetail.name, dto);
 			}
 			//詳細書き込み
@@ -163,7 +195,7 @@ public class ReadWriter implements IReadWriter {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	private void listRead(IPoiSheet sheet, List<XMLDetail> lists, Object data) throws Exception {
+	private void listRead(IPoiSheet sheet, List<XMLDetail> lists, Object data, String defaultPackage) throws Exception {
 		List<Object> list;
 		Object dto;
 		Integer yPos = 0;
@@ -175,7 +207,7 @@ public class ReadWriter implements IReadWriter {
 			}
 			//Rowが存在しなくなるまでループ
 			while(isExists(sheet, xdetail, yPos)) {
-				dto = getDtoClass(xdetail.className).newInstance();
+				dto = getDtoClass(xdetail.className,defaultPackage).newInstance();
 				//詳細書き込み
 
 				for (XMLCell xcell : xdetail.cells) {
@@ -236,7 +268,7 @@ public class ReadWriter implements IReadWriter {
 			for (XMLCell xcell : xdetail.cells) {
 				//文字
 				Object value = PropertyUtil.getValue(param, xcell.name);
-				if (value == null) return;
+				if (value == null) continue;
 				cellWrite(sheet, xcell, value, null);
 			}
 		}
@@ -309,7 +341,6 @@ public class ReadWriter implements IReadWriter {
 				cell.setValue(value, clazz);
 			}
 			catch(Exception e) {
-				//例外時は自動設定
 				cell.setValue(value);
 			}
 		}
@@ -421,20 +452,20 @@ public class ReadWriter implements IReadWriter {
 		return result;
 	}
 	
-	private Class<?> getDtoClass(String className) throws PoiException{
-		Class<?> result = _getClass(className);
+	private Class<?> getDtoClass(String className, String defaultPackage) throws PoiException{
+		Class<?> result = _getClass(className,defaultPackage);
 		if (result == null) {
 			throw new PoiException("class not found. ["+className+"]");
 		}
 		return result;
 	}
-	private Class<?> _getClass(String className) {
+	private Class<?> _getClass(String className,String defaultPackage) {
 		try {
 			return Class.forName(className);
 		}
 		catch(Exception e) {}
 		try {
-			return Class.forName(templeteXml.defaultPackage.concat(".").concat(className));
+			return Class.forName(defaultPackage.concat(".").concat(className));
 		}
 		catch(Exception e) {}
 		return null;
@@ -562,7 +593,7 @@ public class ReadWriter implements IReadWriter {
 	 */
 	public class XMLBook {
 		/**
-		 * ブック名
+		 * ブック名(PoiManager未使用）
 		 */
 		public String name;
 		/**
@@ -570,17 +601,35 @@ public class ReadWriter implements IReadWriter {
 		 */
 		public String defaultPackage;
 		/**
-		 * テンプレートのPath
+		 * テンプレートのPath(PoiManager未使用）
 		 */
 		public String path;
 		/**
-		 * テンプレートのKey
+		 * テンプレートのKey(PoiManager未使用）
 		 */
 		public String key;
 		/**
 		 * Excel入出力設定ファイル情報 Sheet
 		 */
 		public List<XMLSheet> sheets;
+		
+		/**
+		 * クローンメソッド
+		 */
+		public XMLBook clone() {
+			XMLBook result = new XMLBook();
+			result.name = this.name;
+			result.defaultPackage = this.defaultPackage;
+			result.path = this.path;
+			result.key = this.key;
+			if (this.sheets != null) {
+				result.sheets = new ArrayList<XMLSheet>();
+				for (XMLSheet sheet : this.sheets) {
+					result.sheets.add(sheet.clone());
+				}
+			}
+			return result;
+		}
 	}
 	
 	/**
@@ -600,6 +649,26 @@ public class ReadWriter implements IReadWriter {
 		 * Excel入出力設定ファイル情報 リスト
 		 */
 		public List<XMLDetail> lists;
+		/**
+		 * クローンメソッド
+		 */
+		public XMLSheet clone() {
+			XMLSheet result = new XMLSheet();
+			result.name = this.name;
+			if (this.onces != null) {
+				result.onces = new ArrayList<XMLDetail>();
+				for (XMLDetail detail : this.onces) {
+					result.onces.add(detail.clone());
+				}
+			}
+			if (this.lists != null) {
+				result.lists = new ArrayList<XMLDetail>();
+				for (XMLDetail detail : this.lists) {
+					result.lists.add(detail.clone());
+				}
+			}
+			return result;
+		}
 	}
 	
 	/**
@@ -622,6 +691,10 @@ public class ReadWriter implements IReadWriter {
 		
 		private List<Integer> _yPos = new ArrayList<Integer>();
 		
+		public void clearYPotion() {
+			_yPos = new ArrayList<Integer>();
+		}
+		
 		public List<Integer> getYPosition() {
 			if (_yPos == null || _yPos.size() == 0) {
 				_yPos = new ArrayList<Integer>();
@@ -632,6 +705,22 @@ public class ReadWriter implements IReadWriter {
 				}
 			}
 			return _yPos;
+		}
+		
+		/**
+		 * クローンメソッド
+		 */
+		public XMLDetail clone() {
+			XMLDetail result = new XMLDetail();
+			result.name = this.name;
+			result.className = this.className;
+			if (this.cells != null) {
+				result.cells = new ArrayList<XMLCell>();
+				for (XMLCell cell : this.cells) {
+					result.cells.add(cell.clone());
+				}
+			}
+			return result;
 		}
 	}
 
@@ -656,6 +745,17 @@ public class ReadWriter implements IReadWriter {
 		 * セルの色
 		 */
 		public String color;
+		/**
+		 * クローンメソッド
+		 */
+		public XMLCell clone() {
+			XMLCell result = new XMLCell();
+			result.color = this.color;
+			result.name = this.name;
+			result.type = this.type;
+			result.point = new PoiPosition(this.point.x, this.point.y);
+			return result;
+		}
 	}
 	
 	enum CellType {
