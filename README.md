@@ -17,7 +17,7 @@ PoiManager
 	            .fill().foregroundColor().SKY_BLUE()
 	            .fill().pattern().SOLID_FOREGROUND()
 	            .font().BOLD().font().points(12).font().color().BLACK()
-	            .font().name("ÇlÇr ÉSÉVÉbÉN")
+	            .font().name("Ôº≠Ôº≥ „Ç¥„Ç∑„ÉÉ„ÇØ")
 	        .update()                            //style update
 	        .setColumnWidth(15)                  //column size 15
 	    .range("B3:G20")
@@ -28,8 +28,8 @@ PoiManager
 	        .update()
 	    .cell("B2").setValue(new Date())
 	        .style().setDataFormat("yyyy/mm/dd").update()
-	        .comment("ÉRÉÅÉìÉg").write()
-	    .cell("B1").comment("ÉRÉÅÉìÉgÇ≈Ç∑").write()
+	        .comment("„Ç≥„É°„É≥„Éà").write()
+	    .cell("B1").comment("„Ç≥„É°„É≥„Éà„Åß„Åô").write()
 	.saveBook();                                //save
 	
 	PoiManager.getInstance(new File("test1.xls"))    //The "test1.xls" file is read. It is created when it does not exist.
@@ -41,7 +41,7 @@ PoiManager
 	            .fill().foregroundColor().SKY_BLUE()
 	            .fill().pattern().SOLID_FOREGROUND()
 	            .font().BOLD().font().points(12).font().color().BLACK()
-	            .font().name("ÇlÇr ÉSÉVÉbÉN")
+	            .font().name("Ôº≠Ôº≥ „Ç¥„Ç∑„ÉÉ„ÇØ")
 	        .update()                            //style update
 	        .setColumnWidth(15)                  //column size 15
 	    .range("B3:G20")
@@ -52,8 +52,8 @@ PoiManager
 	        .update()
 	    .cell("B2").setValue(new Date())
 	        .style().setDataFormat("yyyy/mm/dd").update()
-	        .comment("ÉRÉÅÉìÉg").write()
-	    .cell("B1").comment("ÉRÉÅÉìÉgÇ≈Ç∑").write()
+	        .comment("„Ç≥„É°„É≥„Éà").write()
+	    .cell("B1").comment("„Ç≥„É°„É≥„Éà„Åß„Åô").write()
 	.saveBook();                                //save
 
 ####Sample Code
@@ -78,3 +78,6 @@ PoiManager
 	LoadData data = PoiManager.getInstance(new File("input.xls")).getReadWriter()
                   .loadFromXml("setting.xml")		//Please be created using the PoiManager.xla
                   .read(LoadData.class);
+
+## License
+MIT
