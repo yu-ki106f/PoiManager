@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.poco.framework.poi.managers.impl;
 
@@ -9,6 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.poco.framework.poi.converter.IValueConverter;
 import org.poco.framework.poi.converter.impl.ValueConverter;
 import org.poco.framework.poi.creator.comment.ICommentCreator;
@@ -16,6 +22,7 @@ import org.poco.framework.poi.creator.image.IImageCreator;
 import org.poco.framework.poi.dto.PoiPosition;
 import org.poco.framework.poi.dto.PoiRect;
 import org.poco.framework.poi.dto.PoiStyleDto;
+import org.poco.framework.poi.exception.PoiException;
 import org.poco.framework.poi.factory.CommentCreatorFactory;
 import org.poco.framework.poi.factory.ImageCreatorFactory;
 import org.poco.framework.poi.factory.PosFactory;
@@ -24,13 +31,9 @@ import org.poco.framework.poi.factory.StyleManagerFactory;
 import org.poco.framework.poi.managers.IPoiManager;
 import org.poco.framework.poi.managers.IReadWriter;
 import org.poco.framework.poi.managers.IStyleManager;
+import org.poco.framework.poi.utils.PropertyUtil;
+import org.poco.framework.poi.utils.PropertyUtil.IProperty;
 import org.poco.framework.poi.utils.WorkbookUtil;
-
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellRangeAddress;
 
 /**
  * POI操作用流れるようなインターフェース
@@ -38,25 +41,28 @@ import org.apache.poi.ss.util.CellRangeAddress;
  *
  */
 public class PoiManager implements IPoiManager {
-	
+
 	private static Map<File,IPoiBook> cache = new HashMap<File, IPoiBook>();
 	private static Map<Workbook,IPoiBook> cacheBook = new HashMap<Workbook, IPoiBook>();
-	
+
+	public static synchronized IPoiBook getInstance(File f) throws Exception {
+		return getInstance(f,false);
+	}
 	/**
 	 * Fileをキーにインスタンスを取得
 	 * @param f
 	 * @return
 	 * @throws Exception
 	 */
-	public static synchronized IPoiBook getInstance(File f) throws Exception {
+	public static synchronized IPoiBook getInstance(File f,Boolean isLowMemory) throws Exception {
 		if (f == null) {
 			throw new Exception("File is null.");
 		}
-		
+
 		IPoiBook instance = cache.get(f);
 
 		if (instance == null) {
-			instance = new PoiBook(getWorkbook(f),f);
+			instance = new PoiBook(getWorkbook(f,isLowMemory),f);
 			cache.put(f, instance);
 		}
 		return instance;
@@ -72,9 +78,9 @@ public class PoiManager implements IPoiManager {
 		if (book == null) {
 			throw new Exception("Workbook is null.");
 		}
-		
+
 		IPoiBook instance = cacheBook.get(book);
-		
+
 		if (instance == null) {
 			instance = new PoiBook(book, null);
 			cacheBook.put(book, instance);
@@ -92,7 +98,7 @@ public class PoiManager implements IPoiManager {
 		StyleFactory.destory();
 		System.gc();
 	}
-	
+
 	/**
 	 * インスタンス破棄
 	 * @param f
@@ -116,25 +122,25 @@ public class PoiManager implements IPoiManager {
 		IPoiBook instance = cacheBook.get(book);
 		cacheBook.remove(instance);
 	}
-	
+
 	/**
 	 * POIのWorkBookを取得します。
 	 * @param f ファイルが存在しない場合は、新規作成（ファイル拡張子に依存して作成するタイプを変更する）<BR/>
 	 *          nullが指定された場合は、旧バージョン（XLS）
 	 * @return
 	 */
-	public static Workbook getWorkbook(File f) throws Exception {
+	public static Workbook getWorkbook(File f, Boolean isLowMemory) throws Exception {
 		Workbook result = null;
 		if (f == null) {
 			//新規生成
-			result = WorkbookUtil.createWorkBook("");
+			result = WorkbookUtil.createWorkBook("",isLowMemory);
 		}
 		//新規生成
 		if (!f.exists()) {
-			result = WorkbookUtil.createWorkBook(f.getName());
+			result = WorkbookUtil.createWorkBook(f.getName(),isLowMemory);
 		}
 		else {
-			result = WorkbookUtil.readWorkbook(f);
+			result = WorkbookUtil.readWorkbook(f,isLowMemory);
 		}
 		return result;
 	}
@@ -148,7 +154,7 @@ public class PoiManager implements IPoiManager {
 		private File _file = null;
 		private IReadWriter rw;
 		private Map<String,IPoiSheet> map = new HashMap<String, IPoiSheet>();
-		
+
 		/**
 		 * コンストラクタ
 		 * @param book
@@ -174,13 +180,14 @@ public class PoiManager implements IPoiManager {
 					StyleFactory.removeStyle(this);
 					//キャッシュ破棄
 					map.clear();
+					Boolean isLowMemory = (_book instanceof SXSSFWorkbook);
 					//リロード
-					_book = WorkbookUtil.readWorkbook(f);
+					_book = WorkbookUtil.readWorkbook(f,isLowMemory);
 				}
 				_file = f;
 			}
 			catch(Exception e) {
-				result = false;				
+				result = false;
 			}
 			return result;
 		}
@@ -190,14 +197,14 @@ public class PoiManager implements IPoiManager {
 		}
 
 		public IPoiSheet cloneSheet(String fromName, String toName) {
-			
+
 			int index = this.getOrgWorkBook().getSheetIndex(fromName);
 			//fromが存在しており、toが存在していないこと
 			if (index != -1 && !WorkbookUtil.exists(this.getOrgWorkBook(), toName)) {
-				
+
 				//クローン作成
 				Sheet sht = this.getOrgWorkBook().cloneSheet(index);
-				//リネーム	
+				//リネーム
 				WorkbookUtil.rename(sht, toName);
 			}
 			return sheet(toName);
@@ -206,7 +213,7 @@ public class PoiManager implements IPoiManager {
 
 		public IPoiSheet sheet(String name) {
 			IPoiSheet psheet = map.get(name);
-			
+
 			if (psheet == null) {
 				Sheet sht = this.getOrgWorkBook().getSheet(name);
 				if (sht == null) {
@@ -217,10 +224,10 @@ public class PoiManager implements IPoiManager {
 				psheet = new PoiSheet(sht, this);
 				map.put(name, psheet);
 			}
-			
+
 			return psheet;
 		}
-		
+
 		/**
 		 * シート名の変更
 		 * @param name
@@ -256,7 +263,7 @@ public class PoiManager implements IPoiManager {
 		private Sheet _sh = null;
 		private Map<PoiPosition,IPoiCell> map = new HashMap<PoiPosition, IPoiCell>();
 		private PoiBook _parent;
-		
+
 		/**
 		 * コンストラクタ
 		 * @param book
@@ -266,7 +273,7 @@ public class PoiManager implements IPoiManager {
 			this._sh = sh;
 			this._parent = parent;
 		}
-		
+
 
 		public Sheet getOrgSheet() {
 			return this._sh;
@@ -312,16 +319,16 @@ public class PoiManager implements IPoiManager {
 			//範囲
 			return range(rect);
 		}
-		
+
 		public IPoiRange range(PoiRect rect) {
 			return createRange(rect.left,rect.top,rect.right,rect.bottom, false);
 		}
-		
+
 
 		public IPoiRange range(int fromX, int fromY, int toX, int toY) {
 			return createRange(fromX,fromY,toX,toY, false);
 		}
-		
+
 		/**
 		 * レンジデータを作成
 		 * @param fromX
@@ -340,7 +347,7 @@ public class PoiManager implements IPoiManager {
 			}
 			return new PoiRange(list.toArray(new IPoiCell[list.size()]), this, merged);
 		}
-		
+
 
 		public IPoiSheet selected() {
 			WorkbookUtil.setSelectAndActive(this.getOrgSheet());
@@ -353,7 +360,7 @@ public class PoiManager implements IPoiManager {
 			//範囲
 			return merge(rect);
 		}
-		
+
 
 		public IPoiRange merge(PoiRect rect) {
 			return merge(rect.left,rect.top,rect.right,rect.bottom);
@@ -403,7 +410,7 @@ public class PoiManager implements IPoiManager {
 		public IPoiRange insertRows(int insertPos) {
 			return insertRows(insertPos, 1);
 		}
-		
+
 		/**
 		 * 指定座標から指定行分、行の挿入を実施し、挿入した範囲を返す
 		 * @param index Y座標
@@ -416,7 +423,7 @@ public class PoiManager implements IPoiManager {
 			//shiftのみしてレンジを指定する
 			return range(0, insertPos, 255, insertPos + insertSize - 1);
 		}
-		
+
 		/**
 		 * 指定座標から指定行分、行の挿入を実施し、挿入した範囲を返す
 		 * @param index Y座標
@@ -444,7 +451,7 @@ public class PoiManager implements IPoiManager {
 	public static class PoiRange  extends SheetChildBase implements IPoiRange {
 		private IPoiCell[] _cells;
 		private boolean _merged = false;
-		
+
 		/**
 		 * コンストラクタ
 		 * @param cells
@@ -455,7 +462,7 @@ public class PoiManager implements IPoiManager {
 			this._parent = parent;
 			this._merged = merged;
 		}
-		
+
 
 		public IPoiCell[] getCells() {
 			return _cells;
@@ -499,7 +506,7 @@ public class PoiManager implements IPoiManager {
 			}
 			return null;
 		}
-		
+
 
 		public IPoiRange setValue(Object value) {
 			for (IPoiCell cell : _cells) {
@@ -516,7 +523,7 @@ public class PoiManager implements IPoiManager {
 		public Boolean isMerged() {
 			return _merged;
 		}
-		
+
 
 		public IPoiRange setColumnWidth(double value) {
 			int lastX = -1;
@@ -607,7 +614,7 @@ public class PoiManager implements IPoiManager {
 		}
 
 	}
-	
+
 	/**
 	 * セル
 	 * @author yu-ki
@@ -616,14 +623,14 @@ public class PoiManager implements IPoiManager {
 	public static class PoiCell extends SheetChildBase implements IPoiCell {
 		private static final int row_multiple = 20;
 		private static final int column_multiple = 276;
-		
+
 		private Row _hRow = null;
 		private Cell _hCell = null;
 		private PoiPosition _pos = null;
 		private ValueConverter _val = null;
-		
+
 		private double _lastRowWidth = 12.75;
-			
+
 		public Integer x() {
 			return	this._pos.x;
 		}
@@ -640,14 +647,14 @@ public class PoiManager implements IPoiManager {
 			this._pos = pos;
 			this._parent = parent;
 		}
-		
+
 		private ValueConverter getValueManager() {
 			if (_val == null) {
 				_val = new ValueConverter(this);
 			}
 			return _val;
 		}
-		
+
 
 		public Cell getOrgCell() {
 			if (_hCell == null) {
@@ -663,12 +670,12 @@ public class PoiManager implements IPoiManager {
 			}
 			return _hRow;
 		}
-		
+
 
 		public IValueConverter value() {
 			return getValueManager();
 		}
-		
+
 
 		public String getStringValue() {
 			return getValueManager().getString();
@@ -683,25 +690,25 @@ public class PoiManager implements IPoiManager {
 			getValueManager().setValue(value);
 			return this;
 		}
-		
+
 
 		public <T> IPoiCell setValue(Object value, Class<T> clazz) {
 			getValueManager().setValue(value,clazz);
 			return this;
 		}
-		
+
 
 		public IPoiCell setError(Byte value) {
 			getValueManager().setError(value);
 			return this;
 		}
-		
+
 
 		public IPoiCell setFormura(String value) {
 			getValueManager().setFormura(value);
 			return this;
 		}
-		
+
 
 		public IStyleManager<IPoiCell> style() {
 			return StyleManagerFactory.create(this);
@@ -710,13 +717,13 @@ public class PoiManager implements IPoiManager {
 		public IStyleManager<IPoiCell> style(PoiStyleDto dto) {
 			return StyleManagerFactory.create(this, dto);
 		}
-		
+
 
 		public IPoiCell setColumnHidden(boolean hidden) {
 			_parent.getOrgSheet().setColumnHidden(x(), hidden);
 			return this;
 		}
-		
+
 
 		public IPoiCell setRownHidden(boolean hidden) {
 			if (hidden) {
@@ -737,7 +744,7 @@ public class PoiManager implements IPoiManager {
 			_parent.getOrgSheet().autoSizeColumn(x());
 			return this;
 		}
-		
+
 
 		public IPoiCell autoSizeColumn(boolean useMergedCells) {
 			_parent.getOrgSheet().autoSizeColumn(x(), useMergedCells);
@@ -751,7 +758,7 @@ public class PoiManager implements IPoiManager {
 			_parent.getOrgSheet().setColumnWidth(x(), value);
 			return this;
 		}
-		
+
 
 		public IPoiCell setRowWidth(double point) {
 			//20倍でサイズに変換する
@@ -766,14 +773,152 @@ public class PoiManager implements IPoiManager {
 		public IImageCreator<IPoiCell> setImage(File f) {
 			return ImageCreatorFactory.create(this, f);
 		}
-		
+
 		public IImageCreator<IPoiCell> setImage(byte[] bytes, String fileName) {
 			return ImageCreatorFactory.create(this, bytes, fileName);
 		}
-		
+
 		public ICommentCreator<IPoiCell> comment(String comment) {
 			return CommentCreatorFactory.create(this, comment);
 		}
+
+		/**
+		 * 指定されたセルの座標からオブジェクトを縦横に展開する
+		 */
+		public IObjectWriter writeObject(Object dto) throws PoiException {
+			List<Object> list = new ArrayList<Object>();
+			list.add(dto);
+			return writeObject(list);
+		}
+		/**
+		 * 指定されたセルの座標からオブジェクトを縦横に展開する
+		 */
+		public IObjectWriter writeObject(List<Object> list) throws PoiException {
+
+			return new PoiObjectWriter(this,list);
+		}
+	}
+
+	public static class PoiObjectWriter implements IObjectWriter {
+
+		private IPoiCell _cell;
+		private Object _header;
+		private List<Object> _list;
+		private List<String> _propertiesList;
+
+		private List<String> getOrderList() throws PoiException {
+
+			List<String> result = _propertiesList;
+			if (result != null) {
+				return result;
+			}
+			result = new ArrayList<String>();
+			Object dto = _header;
+			if (dto == null) {
+				if (_list.size() > 0) {
+					dto = _list.get(0);
+				}
+			}
+			if (dto == null) throw new PoiException("write data not found.");
+
+			if (dto instanceof Map<?, ?>) {
+				Map<?,?> map = (Map<?,?>)dto;
+				for (Object value : map.keySet()) {
+					result.add(value.toString());
+				}
+				return result;
+			}
+
+			List<IProperty> props = PropertyUtil.getPropertiesAll(dto);
+			for (IProperty prop : props) {
+				result.add(prop.getName());
+			}
+			return result;
+		}
+
+		/**
+		 * コンストラクタ
+		 * @param cell
+		 * @param dto
+		 */
+		public PoiObjectWriter(IPoiCell cell,List<Object> list) {
+			_cell = cell;
+			_list = list;
+		}
+
+		/**
+		 * 指定条件に従い、データをPoiBookに書き込む
+		 */
+		public IPoiCell write() throws PoiException {
+			if (_list.size() == 0 ) return _cell;
+
+			List<String> orderList = getOrderList();
+
+			Integer posX = _cell.x();
+			Integer posY = _cell.y();
+			Integer x = posX;
+			Integer y = posY;
+
+			if (_header != null) {
+				for (String key : orderList) {
+					_cell.cell(x, y).setValue(getValue(_header, key));
+					x++;
+				}
+				y++;
+			}
+
+			for (Object item : _list) {
+				x = posX;
+				for (String key : orderList) {
+					_cell.cell(x, y).setValue(getValue(item, key));
+					x++;
+				}
+				y++;
+			}
+			return _cell;
+		}
+
+		/**
+		 * ヘッダを設定します
+		 */
+		public IObjectWriter setHeader(Object header) {
+			_header = header;
+			return this;
+		}
+
+		/**
+		 * 並び順、出力フィールドを設定する
+		 */
+		public IObjectWriter order(List<String> propertiesList)
+				throws PoiException {
+			_propertiesList = propertiesList;
+			return this;
+		}
+		public IObjectWriter order(String[] propertiesArray)
+				throws PoiException {
+			List<String> order = new ArrayList<String>();
+			for (String name : propertiesArray) {
+				order.add(name);
+			}
+			return order(order);
+		}
+
+		private Object getValue(Object item, String propName) {
+			Object result = null;
+			if (item instanceof Map<?,?>) {
+				Map<?,?> map = (Map<?,?>)item;
+				result = map.get(propName);
+			}
+			else {
+				result = PropertyUtil.getValue(item, propName);
+			}
+			//値がない場合は空白
+			if (result == null) {
+				return "";
+			}
+			return result;
+		}
+
 	}
 
 	/**
@@ -783,11 +928,11 @@ public class PoiManager implements IPoiManager {
 	 */
 	public static class SheetChildBase implements IPoiSheet {
 		protected IPoiSheet _parent;
-	
+
 		public IPoiBook getBook() {
 			return _parent.getBook();
 		}
-		
+
 		//--- sheetメソッド ----//
 
 		public IPoiCell cell(int x, int y) {
@@ -843,7 +988,7 @@ public class PoiManager implements IPoiManager {
 		public IPoiRange range(PoiRect rect) {
 			return _parent.range(rect);
 		}
-		
+
 
 		public IPoiSheet selected() {
 			return _parent.selected();
@@ -865,7 +1010,7 @@ public class PoiManager implements IPoiManager {
 		public IPoiRange insertRows(String address) {
 			return _parent.insertRows(address);
 		}
-		
+
 		//---- book メソッド ----//
 
 		public boolean saveBook(File f) {

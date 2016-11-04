@@ -17,6 +17,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.util.IOUtils;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class WorkbookUtil {
@@ -24,27 +25,29 @@ public class WorkbookUtil {
 	private static final String TYPE_JPEG = "jpeg";
 	private static final String TYPE_PNG = "png";
 	private static final String TYPE_DIB = "bmp";
-	
+
 	private static final String XLSX = "xlsx";
-	
+
+	private static final String XLSM = "xlsm";
+
 	/**
 	 * Excelファイル(直接Path指定)を取得する
 	 * @param String ファイル名
 	 * @return HSSFWorkbook 作成したブック
-	 * @throws FljException 
+	 * @throws FljException
 	 */
-	public static Workbook readWorkbook(File f) throws Exception {
-		
-		FileInputStream is = null; 
+	public static Workbook readWorkbook(File f,Boolean isLowMemory) throws Exception {
+
+		FileInputStream is = null;
 		//POIFSFileSystem psys = null;
 		Workbook result = null;
 		try {
-			
+
 			// テンプレートを取得
 			is = new FileInputStream(f);
-			
+
 			//psys = new POIFSFileSystem(is);
-			result = tryReadWorkbook(f.getName(),is);
+			result = tryReadWorkbook(f.getName(),is,isLowMemory);
 			if (result == null) {
 				throw new IOException(f.getName()+" is not open.");
 			}
@@ -61,14 +64,20 @@ public class WorkbookUtil {
 		}
 		return result;
 	}
-	
-	public static Workbook createWorkBook(String name) {
+
+	public static Workbook createWorkBook(String name, Boolean isLowMemory) {
 		if (isXlsx(name) ) {
+			if (name.equals("") && isLowMemory ) {
+				return new SXSSFWorkbook(-1);
+			}
 			return new XSSFWorkbook();
+		}
+		if (isLowMemory) {
+			return new SXSSFWorkbook(-1);
 		}
 		return new HSSFWorkbook();
 	}
-	public static Workbook tryReadWorkbook(String name,FileInputStream is) {
+	public static Workbook tryReadWorkbook(String name,FileInputStream is, Boolean isLowMemory) {
 		Workbook result = null;
 		if (isXlsx(name) ) {
 			result = readXlsx(is);
@@ -82,9 +91,12 @@ public class WorkbookUtil {
 				result = readXlsx(is);
 			}
 		}
+		if (result instanceof XSSFWorkbook && isLowMemory) {
+			result = new SXSSFWorkbook((XSSFWorkbook)result,-1);
+		}
 		return result;
 	}
-		
+
 	private static Workbook readXls(FileInputStream is) {
 		try {
 			return new HSSFWorkbook(is);
@@ -92,7 +104,7 @@ public class WorkbookUtil {
 		catch(Exception e){}
 		return null;
 	}
-	
+
 	private static Workbook readXlsx(FileInputStream is) {
 		try {
 			return new XSSFWorkbook(is);
@@ -107,7 +119,7 @@ public class WorkbookUtil {
 	 * @throws FljException
 	 */
 	public static void saveWorkBook(Workbook wb, File f) throws Exception {
-		
+
 		if (f == null ) {
 			throw new Exception("保存先の設定が異常です。");
 		}
@@ -117,21 +129,21 @@ public class WorkbookUtil {
 		if (wb == null) {
 			throw new Exception("保存内容がありません。");
 		}
-		
+
 		try{
 			FileOutputStream fos = null;
 			try {
 				// ファイルの書き出し処理
 				fos = new FileOutputStream(f);
-				
+
 				// ワークブック書き込み
 				wb.write(fos);
-				
+
 			} catch (FileNotFoundException e) {
 				// 書き込み対象にアクセスできない
 				throw e;
 			}finally {
-				
+
 				// ファイルクローズ
 				if (fos != null) {
 					fos.close();
@@ -156,7 +168,7 @@ public class WorkbookUtil {
 		}
 		return row;
 	}
-	
+
 	/**
 	 * ExcelのCellを取得する。
 	 * （セルが無い場合新たに作成します）
@@ -170,10 +182,10 @@ public class WorkbookUtil {
 		}
 		return cell;
 	}
-	
+
 	public static boolean rename(Sheet srcSheet, String name) {
 		if (srcSheet == null) return false;
-		
+
 		Workbook book = srcSheet.getWorkbook();
 		int index = book.getSheetIndex(srcSheet);
 		//対象シートが存在する 且つ 変更後の名前のシートがないこと
@@ -184,13 +196,13 @@ public class WorkbookUtil {
 		}
 		return false;
 	}
-	
+
 	public static PoiRect analyseRangeAddress(String value,IPoiSheet sheet) {
 
 		if (value == null) return null;
-		
+
 		String[] values = value.split(":");
-		
+
 		if (values.length == 0) {
 			throw new ArrayIndexOutOfBoundsException("error[" + value + "]");
 		}
@@ -211,7 +223,7 @@ public class WorkbookUtil {
 
 	public static PoiRect analyseSelectColumn(String value,IPoiSheet sheet) {
 		if (value == null) return null;
-		
+
 		String tmp = value.replaceAll("\\$", "").toUpperCase();
 		String columStr = tmp.replaceAll("(^[A-Z]+):([A-Z]+)$", "$1#$2");
 		String values[];
@@ -229,10 +241,10 @@ public class WorkbookUtil {
 		}
 		return null;
 	}
-	
+
 	public static PoiRect analyseSelectRow(String value,IPoiSheet sheet) {
 		if (value == null) return null;
-		
+
 		String tmp = value.replaceAll("\\$", "").toUpperCase();
 		String rowStr = tmp.replaceAll("(^[0-9]+):([0-9]+)$", "$1#$2");
 		String values[];
@@ -266,20 +278,20 @@ public class WorkbookUtil {
 				continue;
 			}
 			value = row.getLastCellNum() - 1;
-			result = result < value ? value : result; 
+			result = result < value ? value : result;
 		}
 		return isXlsx ? result.shortValue() : result > 255 ? 255 : result.shortValue();
 	}
 	/**
-	 * 
+	 *
 	 * @param value
 	 * @return
 	 */
 	public static PoiRect analyseSelectColumnOrRow(String value,IPoiSheet sheet) {
 		if (value == null) return null;
-		
+
 		PoiRect result = null;
-		
+
 		result = analyseSelectColumn(value,sheet);
 		if (result == null) {
 			result = analyseSelectRow(value,sheet);
@@ -287,7 +299,7 @@ public class WorkbookUtil {
 
 		return result;
 	}
-	
+
 	public static boolean equals(Object ...args) {
 		Object lastItem = null;
 		for (Object item : args) {
@@ -301,44 +313,44 @@ public class WorkbookUtil {
 		}
 		return true;
 	}
-	
+
 	public static PoiPosition analyseAddress(String value) {
-		
+
 		Integer x = 0;
 		Integer y = 0;
 
 		String col;
 		String row;
 		String tmp;
-		
+
 		if (value != null && value.length() >= 2) {
 			//$は解除
 			tmp = value.replaceAll("\\$", "");
-			
+
 			col = tmp.replaceAll("(^[A-Za-z]+)([0-9]+)$", "$1").toUpperCase();
 			row = tmp.replaceAll("(^[A-Za-z]+)([0-9]+)$", "$2");
-			
+
 			if (col.equals(tmp.toUpperCase()) || row.equals(tmp)) {
 				throw new ArrayIndexOutOfBoundsException("error[" + value + "]");
 			}
-			
+
 			if (col.length() > 2 || col.length() == 0 || row.length() == 0) {
 				throw new ArrayIndexOutOfBoundsException("error[" + value + "]");
 			}
-			
+
 			if (col.length() >= 1) {
 				x = alpabetToNumber(col);
 			}
-			
+
 			y = Integer.valueOf(row) - 1;
-			
+
 			//if (x >= 0 && x <= 255 && y >= 0 && y <= 65535) {
 				return new PoiPosition(x, y);
 			//}
 		}
 		throw new ArrayIndexOutOfBoundsException("error[" + value + "]");
 	}
-	
+
 	public static Integer alpabetToNumber(char x) {
 		return x - 'A';
 	}
@@ -374,10 +386,10 @@ public class WorkbookUtil {
 				x = tmp;
 			}
 		}
-		
+
 		return new PoiPosition(x,y);
 	}
-	
+
 
 	/**
 	 * 指定したファイルを読み込み、バイト配列で返す
@@ -408,8 +420,8 @@ public class WorkbookUtil {
 	public static boolean exists(Workbook book, String name) {
 		return (book.getSheetIndex(name) != -1);
 	}
-	
-	
+
+
 	/**
 	 * NULL VALUE
 	 * @param <T>
@@ -423,7 +435,7 @@ public class WorkbookUtil {
 		}
 		return value;
 	}
-	
+
 	public static void setSelectAndActive(Sheet sheet) {
 		Workbook book = sheet.getWorkbook();
 		//選択解除
@@ -435,12 +447,12 @@ public class WorkbookUtil {
 		//アクティブ
 		book.setActiveSheet( book.getSheetIndex(sheet) );
 	}
-	
+
 	public static int getPictureType(File file) {
 		if (file == null || file.getName() == null) return -1;
 		return getPictureType(getSuffix(file.getName()).toLowerCase());
 	}
-	
+
 	public static String getSuffix(String fileName ){
 	    if (fileName == null)
 	        return null;
@@ -450,10 +462,10 @@ public class WorkbookUtil {
 	    }
 	    return fileName;
 	}
-	
+
 	public static int getPictureType(String fileType) {
 		if (fileType == null) return -1;
-		
+
 		String type = fileType.toLowerCase();
 		if (TYPE_JPEG.equals(type) || TYPE_JPG.equals(type) ) {
 			return HSSFWorkbook.PICTURE_TYPE_JPEG;
@@ -467,10 +479,11 @@ public class WorkbookUtil {
 		return -1;
 	}
 	public static boolean isXlsx(String fileName) {
-		return (getSuffix(fileName).toLowerCase().equals(XLSX) );
-	}	
+		String suffix = getSuffix(fileName).toLowerCase();
+		return (suffix.equals(XLSX) || suffix.equals(XLSM) );
+	}
 	public static boolean isXlsx(Workbook book) {
-		return (book instanceof XSSFWorkbook);
+		return (book instanceof XSSFWorkbook || book instanceof SXSSFWorkbook);
 	}
 
 

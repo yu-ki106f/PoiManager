@@ -32,18 +32,18 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 public class ReadWriter implements IReadWriter {
-	
+
 	private IPoiBook book;
-	
+
 	private XMLBook templeteXml = null;
-	
+
 	//Listの先頭行のスタイルのコピーの有無
 	private Boolean styleCopy = false;
-	
+
 	public static Integer MAX_ROWS = 65535;
 
 	/**
-	 * テンプレートのクローンを返す 
+	 * テンプレートのクローンを返す
 	 * @return
 	 */
 	public XMLBook getTempleteXMLClone() {
@@ -63,7 +63,7 @@ public class ReadWriter implements IReadWriter {
 	public Integer getMaxRows() {
 		return MAX_ROWS;
 	}
-	
+
 	public ReadWriter(IPoiBook value) {
 		book = value;
 	}
@@ -85,7 +85,7 @@ public class ReadWriter implements IReadWriter {
 	public boolean isXlsx() {
 		return WorkbookUtil.isXlsx(getOrgWorkBook());
 	}
-	
+
 	/**
 	 * PoiBookに指定されたデータを書き込み
 	 * @param data
@@ -115,12 +115,12 @@ public class ReadWriter implements IReadWriter {
 		}
 		return book;
 	}
-	
+
 	/**
 	 * PoiBookに指定されたデータを書き込み
 	 * @param data
 	 * @return
-	 * @throws PoiException 
+	 * @throws PoiException
 	 */
 	public IPoiBook write(Object data) throws PoiException {
 		return write(data,templeteXml);
@@ -165,7 +165,7 @@ public class ReadWriter implements IReadWriter {
 	public <T> T read(Class<T> baseClass) throws PoiException {
 		return read(baseClass,templeteXml);
 	}
-	
+
 	/**
 	 * 個別データをオブジェクトに格納する
 	 * @param sheet　シート
@@ -273,7 +273,7 @@ public class ReadWriter implements IReadWriter {
 			}
 		}
 	}
-	
+
 	/**
 	 * リスト項目書き込み
 	 * @param sheet
@@ -332,7 +332,7 @@ public class ReadWriter implements IReadWriter {
 		//色
 		updateForegroundColor(cell.style(), xcell.color);
 		//セルタイプ
-		Class<?> clazz = getWriteClass(xcell.type);				
+		Class<?> clazz = getWriteClass(xcell.type);
 		if (clazz == null) {
 			cell.setValue(value);
 		}
@@ -373,7 +373,7 @@ public class ReadWriter implements IReadWriter {
 		catch(Exception e){}
 		return null;
 	}
-	
+
 	/**
 	 * 背景色を更新する
 	 * @param style
@@ -451,7 +451,7 @@ public class ReadWriter implements IReadWriter {
 		}
 		return result;
 	}
-	
+
 	private Class<?> getDtoClass(String className, String defaultPackage) throws PoiException{
 		Class<?> result = _getClass(className,defaultPackage);
 		if (result == null) {
@@ -471,11 +471,35 @@ public class ReadWriter implements IReadWriter {
 		return null;
 	}
 	//----------------------------XML読込--------------------------
+	  public static ClassLoader getDefaultClassLoader()
+	  {
+	    ClassLoader cl = null;
+	    try
+	    {
+	      cl = Thread.currentThread().getContextClassLoader();
+	    }
+	    catch (Throwable localThrowable) {}
+	    if (cl == null)
+	    {
+	      cl = ReadWriter.class.getClassLoader();
+	      if (cl == null) {
+	        try
+	        {
+	          cl = ClassLoader.getSystemClassLoader();
+	        }
+	        catch (Throwable localThrowable1) {}
+	      }
+	    }
+	    return cl;
+	  }
 	/**
 	 * 例外が発生しなければ、読込み成功
 	 */
 	public IReadWriter loadFromXml(String fileName) throws PoiException {
 		InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(fileName);
+		if (inputStream == null) {
+			inputStream = getDefaultClassLoader().getResourceAsStream(fileName);
+		}
 		try {
 			templeteXml = loadXml(inputStream);
 		}
@@ -518,7 +542,7 @@ public class ReadWriter implements IReadWriter {
 	 */
 	private XMLBook createXMLBook(Node root) {
 		XMLBook result = new XMLBook();
-		
+
 		result.name = XMLUtils.getAttributeValue(root, "name");
 		// デフォルトパッケージ名を取得
 		result.defaultPackage = XMLUtils.getAttributeValue(root, "defaultPackage");
@@ -528,12 +552,12 @@ public class ReadWriter implements IReadWriter {
 		result.key = XMLUtils.getAttributeValue(root, "key");
 		//シート一覧取得
 		result.sheets = createXMLSheetList(root);
-		
+
 		return result;
 	}
 	private List<XMLSheet> createXMLSheetList(Node root) {
 		List<XMLSheet> result = new ArrayList<XMLSheet>();
-		
+
 		for(Node sheet: XMLUtils.getChildNodeList(root)) {
 			//シート追加
 			result.add(createXMLSheet(sheet));
@@ -546,7 +570,7 @@ public class ReadWriter implements IReadWriter {
 		result.name = XMLUtils.getAttributeValue(sheet, "name");
 		result.lists = new ArrayList<XMLDetail>();
 		result.onces = new ArrayList<XMLDetail>();
-		
+
 		// sheetの子供を取得
 		for(Node detail : XMLUtils.getChildNodeList(sheet)) {
 			// 可変
@@ -566,7 +590,7 @@ public class ReadWriter implements IReadWriter {
 		result.cells = createXMLCells(detail);
 		return result;
 	}
-	private List<XMLCell> createXMLCells(Node detail) { 
+	private List<XMLCell> createXMLCells(Node detail) {
 		List<XMLCell> result = new ArrayList<XMLCell>();
 		XMLCell cell;
 		Node point;
@@ -612,7 +636,7 @@ public class ReadWriter implements IReadWriter {
 		 * Excel入出力設定ファイル情報 Sheet
 		 */
 		public List<XMLSheet> sheets;
-		
+
 		/**
 		 * クローンメソッド
 		 */
@@ -631,7 +655,7 @@ public class ReadWriter implements IReadWriter {
 			return result;
 		}
 	}
-	
+
 	/**
 	 * Excel入出力設定ファイル情報 Sheet
 	 * @author neutral shibata
@@ -670,7 +694,7 @@ public class ReadWriter implements IReadWriter {
 			return result;
 		}
 	}
-	
+
 	/**
 	 * Excel入出力設定ファイル情報 Detail
 	 * @author neutral shibata
@@ -688,13 +712,13 @@ public class ReadWriter implements IReadWriter {
 		 * Excel入出力設定ファイル情報 Cell
 		 */
 		public List<XMLCell> cells;
-		
+
 		private List<Integer> _yPos = new ArrayList<Integer>();
-		
+
 		public void clearYPotion() {
 			_yPos = new ArrayList<Integer>();
 		}
-		
+
 		public List<Integer> getYPosition() {
 			if (_yPos == null || _yPos.size() == 0) {
 				_yPos = new ArrayList<Integer>();
@@ -706,7 +730,7 @@ public class ReadWriter implements IReadWriter {
 			}
 			return _yPos;
 		}
-		
+
 		/**
 		 * クローンメソッド
 		 */
@@ -757,7 +781,7 @@ public class ReadWriter implements IReadWriter {
 			return result;
 		}
 	}
-	
+
 	enum CellType {
 		STRING(String.class),
 		BLANK(String.class),
@@ -775,7 +799,7 @@ public class ReadWriter implements IReadWriter {
 			return clazz;
 		}
 	}
-	
+
 	public boolean isEmpty(Object value) {
 		if (value == null) return true;
 		if (value.toString().equals("")) return true;

@@ -6,14 +6,14 @@
      as the first entry and export the buildfile again. -->
 
 <project basedir = "." default = "create-jar" name = "PoiManager">
-	
+
     <!-- javac コンパイルオプション定義 -->
     <property name = "debug.javac" value = "on"/>
     <property name = "optimize.javac" value = "off"/>
     <property name = "target.javac" value = "1.6"/>
     <property name = "encoding.javac" value = "UTF-8"/>
 	<property name = "lib.dir"   location="./lib"/>
-	
+
     <!-- ディレクトリ定義 -->
     <property name = "bin.dir" value = "bin"/>
     <property name = "dest.dir" value = "dest"/>
@@ -27,13 +27,13 @@
 		<fileset dir="${lib.dir}" includes="*.jar"/>
 		<pathelement location = "bin"/>
     </path>
-	
+
     <target name = "clean">
         <echo>clean</echo>
         <delete dir = "${bin.dir}"/>
     	<delete file = "${dest.dir}/PoiManager-poi*.jar"/>
     </target>
-	
+
     <!-- PoiManager.jar ファイルを作成 -->
     <target depends = "clean" name = "create-jar" description = "-   (create PoiManager.jar)">
         <echo>build PoiManager.</echo>
@@ -51,9 +51,9 @@
         </copy>
 
 		<echo>create PoiManager.jar</echo>
-		
-    	<delete file = "${dest.dir}/PoiManager-3.10.2.jar"/>
-        <jar jarfile = "${dest.dir}/PoiManager-3.10.2.jar" duplicate = "preserve">
+
+    	<delete file = "${dest.dir}/PoiManager-3.10.3.jar"/>
+        <jar jarfile = "${dest.dir}/PoiManager-3.10.3.jar" duplicate = "preserve">
             <fileset dir = "bin">
             </fileset>
         </jar>
