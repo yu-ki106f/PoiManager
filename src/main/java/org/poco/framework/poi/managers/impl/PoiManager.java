@@ -5,6 +5,7 @@ package org.poco.framework.poi.managers.impl;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -802,7 +803,7 @@ public class PoiManager implements IPoiManager {
 	public static class PoiObjectWriter implements IObjectWriter {
 
 		private IPoiCell _cell;
-		private Object _header;
+		private List<Object> _headerList;
 		private List<Object> _list;
 		private List<String> _propertiesList;
 
@@ -813,7 +814,7 @@ public class PoiManager implements IPoiManager {
 				return result;
 			}
 			result = new ArrayList<String>();
-			Object dto = _header;
+			Object dto = _headerList != null ? _headerList.size() > 0 ? _headerList.get(0) : null : null;
 			if (dto == null) {
 				if (_list.size() > 0) {
 					dto = _list.get(0);
@@ -856,15 +857,18 @@ public class PoiManager implements IPoiManager {
 
 			Integer posX = _cell.x();
 			Integer posY = _cell.y();
-			Integer x = posX;
-			Integer y = posY;
 
-			if (_header != null) {
-				for (String key : orderList) {
-					_cell.cell(x, y).setValue(getValue(_header, key));
-					x++;
+			Integer x,y = posY;
+
+			if (_headerList != null) {
+				for (Object header : _headerList) {
+					x = posX;
+					for (String key : orderList) {
+						_cell.cell(x, y).setValue(getValue(header, key));
+						x++;
+					}
+					y++;
 				}
-				y++;
 			}
 
 			for (Object item : _list) {
@@ -882,10 +886,19 @@ public class PoiManager implements IPoiManager {
 		 * ヘッダを設定します
 		 */
 		public IObjectWriter setHeader(Object header) {
-			_header = header;
+			if (header != null) {
+				return setHeader(Arrays.asList(header));
+			}
 			return this;
 		}
-
+		/**
+		 * ヘッダを設定します。複数行指定
+		 */
+		@Override
+		public IObjectWriter setHeader(List<Object> headerList) {
+			_headerList = headerList;
+			return this;
+		}
 		/**
 		 * 並び順、出力フィールドを設定する
 		 */
@@ -918,7 +931,6 @@ public class PoiManager implements IPoiManager {
 			}
 			return result;
 		}
-
 	}
 
 	/**

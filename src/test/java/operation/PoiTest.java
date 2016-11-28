@@ -56,9 +56,9 @@ public class PoiTest {
 		test4ReadDataXls(new File("output/test3Write.xls"),250);		//xls	test3WriteDataExcelで作成したExcelファイルを利用
 		test4ReadDataXls(new File("output/test3Write.xlsx"),500);	//xlsx	test3WriteDataExcelで作成したExcelファイルを利用
 
-		//5万件
-		test3WriteDataExcel(new File("template/Sample.xls"),new File("output/test3Write50000.xls"),50000,30000);	//xls
-		test3WriteDataExcel(new File("template/Sample.xlsx"),new File("output/test3Write50000.xlsx"),50000,30000);	//xlsx
+		//1万件
+		test3WriteDataExcel(new File("template/Sample.xls"),new File("output/test3Write10000.xls"),10000,5000);	//xls
+		test3WriteDataExcel(new File("template/Sample.xlsx"),new File("output/test3Write10000.xlsx"),10000,5000);	//xlsx
 
 	}
 
@@ -74,13 +74,14 @@ public class PoiTest {
 			List<Object> mapList = createMapList();
 			List<Object> dtoList = createDtoList();
 			//内容を書き込み(カラム順指定）
-			sheet.cell(0,7).writeObject(mapList).order(new String[]{"profit","cost","amount","name","product"}).write();
+			sheet.cell(0,3).writeObject(mapList).order(new String[]{"profit","cost","amount","name","product"}).write();
 			//内容を書き込み(カラム順指定）
-			sheet.cell(6,7).writeObject(dtoList).order(new String[]{"name","amount","cost","profit"}).write();
+			sheet.cell(6,3).writeObject(dtoList).order(new String[]{"name","amount","cost","profit"}).write();
 
 			//カラム指定なし
-			sheet.cell(12,6).writeObject(mapList).setHeader(createMap(true)).write()
-				.cell(18,6).writeObject(dtoList).setHeader(createDto(true)).write()
+			sheet.cell(12,2).writeObject(mapList).setHeader(createMap(true)).write()
+				//heder２行
+				.cell(18,2).writeObject(dtoList).setHeader(createListHeaderDto()).write()
 				//保存
 				.saveBook();
 		}
@@ -254,6 +255,12 @@ public class PoiTest {
 			list.add(createDto(false));
 		}
 		return list;
+	}
+	private static List<Object> createListHeaderDto() {
+		List<Object> result = new ArrayList<Object>();
+		result.add(createDto(true));
+		result.add(createDto(true));
+		return result;
 	}
 	private static Object createDto(Boolean isHeader) {
 

@@ -162,6 +162,7 @@ public interface IPoiManager {
 
 	public interface IObjectWriter {
 		IPoiCell write() throws PoiException;
+		IObjectWriter setHeader(List<Object> header);
 		IObjectWriter setHeader(Object header);
 		IObjectWriter order(List<String> propertiesList) throws PoiException;
 		IObjectWriter order(String[] propertiesArray) throws PoiException;
