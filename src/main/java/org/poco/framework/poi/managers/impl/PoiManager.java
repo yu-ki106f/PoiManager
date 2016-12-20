@@ -794,7 +794,7 @@ public class PoiManager implements IPoiManager {
 		/**
 		 * 指定されたセルの座標からオブジェクトを縦横に展開する
 		 */
-		public IObjectWriter writeObject(List<Object> list) throws PoiException {
+		public IObjectWriter writeObject(List<?> list) throws PoiException {
 
 			return new PoiObjectWriter(this,list);
 		}
@@ -803,8 +803,8 @@ public class PoiManager implements IPoiManager {
 	public static class PoiObjectWriter implements IObjectWriter {
 
 		private IPoiCell _cell;
-		private List<Object> _headerList;
-		private List<Object> _list;
+		private List<?> _headerList;
+		private List<?> _list;
 		private List<String> _propertiesList;
 
 		private List<String> getOrderList() throws PoiException {
@@ -842,7 +842,7 @@ public class PoiManager implements IPoiManager {
 		 * @param cell
 		 * @param dto
 		 */
-		public PoiObjectWriter(IPoiCell cell,List<Object> list) {
+		public PoiObjectWriter(IPoiCell cell,List<?> list) {
 			_cell = cell;
 			_list = list;
 		}
@@ -895,7 +895,7 @@ public class PoiManager implements IPoiManager {
 		 * ヘッダを設定します。複数行指定
 		 */
 		@Override
-		public IObjectWriter setHeader(List<Object> headerList) {
+		public IObjectWriter setHeader(List<?> headerList) {
 			_headerList = headerList;
 			return this;
 		}

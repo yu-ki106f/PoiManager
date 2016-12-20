@@ -215,7 +215,12 @@ public class PoiTest {
 	private static List<Object> createMapList() {
 		List<Object> list = new ArrayList<Object>();
 		for (int i = 0 ; i < 100; i++) {
-			list.add(createMap(false));
+			if (i % 2 == 0) {
+				list.add(createMap(false));
+			}
+			else {
+				list.add(createMap2(false));
+			}
 		}
 		return list;
 	}
@@ -237,6 +242,24 @@ public class PoiTest {
 		}
 		return result;
 	}
+	private static Map<String,Object> createMap2(Boolean isHeader) {
+		Map<String,Object> result = new LinkedHashMap<String, Object>();
+		if (isHeader) {
+			result.put("name", "名前2");
+			result.put("amount", "売上2");
+			result.put("cost", "経費2");
+			result.put("profit", "利益2");
+			result.put("product", "商品2");
+		}
+		else {
+			result.put("name", "山田次郎");
+			result.put("amount", 100000);
+			result.put("cost",   50000);
+			result.put("profit", 50000);
+			result.put("product", "iPhone");
+		}
+		return result;
+	}
 	public static class TestHeaderDto {
 		public String name;
 		public String amount;
@@ -252,14 +275,19 @@ public class PoiTest {
 	private static List<Object> createDtoList() {
 		List<Object> list = new ArrayList<Object>();
 		for (int i = 0 ; i < 100; i++) {
-			list.add(createDto(false));
+			if ( i % 2 == 0) {
+				list.add(createDto(false));
+			}
+			else {
+				list.add(createDto2(false));
+			}
 		}
 		return list;
 	}
 	private static List<Object> createListHeaderDto() {
 		List<Object> result = new ArrayList<Object>();
 		result.add(createDto(true));
-		result.add(createDto(true));
+		result.add(createDto2(true));
 		return result;
 	}
 	private static Object createDto(Boolean isHeader) {
@@ -279,7 +307,23 @@ public class PoiTest {
 		result.profit = result.amount - result.cost;
 		return result;
 	}
+	private static Object createDto2(Boolean isHeader) {
 
+		if (isHeader) {
+			TestHeaderDto header = new TestHeaderDto();
+			header.name = "____";
+			header.amount = "____";
+			header.cost = "____";
+			header.profit = "____";
+			return header;
+		}
+		TestDataDto result = new TestDataDto();
+		result.name = "山田奈々子";
+		result.amount = 200000;
+		result.cost = 150000;
+		result.profit = result.amount - result.cost;
+		return result;
+	}
 	/**
 	 * bookに内容を書き込む
 	 * @param book
